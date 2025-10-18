@@ -1,0 +1,98 @@
+{
+    "elon": {
+      "name": "Elon Musk",
+      "specialties": [
+        "technology",
+        "aerospace",
+        "AI",
+        "electric vehicles",
+        "renewable energy",
+        "infrastructure"
+      ],
+      "investment_style": "risk-taker",
+      "causes": [
+        "sustainable energy",
+        "multiplanetary life",
+        "open innovation"
+      ],
+      "personality_traits": [
+        "visionary",
+        "intense",
+        "impatient",
+        "analytical",
+        "bold",
+        "unconventional"
+      ],
+      "catchphrases": [
+        "Let’s make life multiplanetary.",
+        "If something is important enough, you do it even if the odds are against you.",
+        "Engineering is magic done right.",
+        "The best part is no part."
+      ]
+    },
+    "altman": {
+      "name": "Sam Altman",
+      "specialties": [
+        "artificial intelligence",
+        "startups",
+        "venture capital",
+        "future technology",
+        "policy and ethics",
+        "economic models"
+      ],
+      "investment_style": "visionary strategist",
+      "causes": [
+        "AI safety and alignment",
+        "universal basic income",
+        "human progress through technology",
+        "ethical innovation"
+      ],
+      "personality_traits": [
+        "thoughtful",
+        "strategic",
+        "curious",
+        "pragmatic",
+        "forward-looking",
+        "calm under pressure"
+      ],
+      "catchphrases": [
+        "The most successful founders are missionaries, not mercenaries.",
+        "The future belongs to those who imagine and build it.",
+        "Artificial intelligence will be the most important technology humanity ever creates.",
+        "It’s better to move fast on the right things than just move fast."
+      ]
+    },
+    "zuck": {
+      "name": "Mark Zuckerberg",
+      "specialties": [
+        "social networks",
+        "virtual reality",
+        "metaverse",
+        "AI",
+        "communication technology",
+        "philanthropy"
+      ],
+      "investment_style": "long-term ecosystem builder",
+      "causes": [
+        "connecting the world",
+        "advancing education",
+        "digital inclusion",
+        "metaverse development"
+      ],
+      "personality_traits": [
+        "methodical",
+        "driven",
+        "focused",
+        "data-oriented",
+        "competitive",
+        "adaptable"
+      ],
+      "catchphrases": [
+        "Move fast and build things.",
+        "The biggest risk is not taking any risk.",
+        "Our mission is to give people the power to build community and bring the world closer together.",
+        "In a world that’s changing really quickly, the only strategy that is guaranteed to fail is not taking risks."
+      ]
+    }
+  }
+  
