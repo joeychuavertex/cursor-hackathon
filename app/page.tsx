@@ -4,11 +4,12 @@ import { useState } from 'react'
 import LandingPage from '@/components/LandingPage'
 import JudgeSelection from '@/components/JudgeSelection'
 import SharkTankRoom from '@/components/SharkTankRoom'
+import PerformanceDashboard from '@/components/PerformanceDashboard'
 import { Judge } from '@/types/judge'
 
 export default function Home() {
   const [selectedJudges, setSelectedJudges] = useState<Judge[]>([])
-  const [currentStep, setCurrentStep] = useState<'landing' | 'selection' | 'room'>('landing')
+  const [currentStep, setCurrentStep] = useState<'landing' | 'selection' | 'room' | 'dashboard'>('landing')
 
   const handleEnterTank = () => {
     setCurrentStep('selection')
@@ -29,6 +30,10 @@ export default function Home() {
     setSelectedJudges([])
   }
 
+  const handlePresentationComplete = () => {
+    setCurrentStep('dashboard')
+  }
+
   return (
     <main className="min-h-screen">
       {currentStep === 'landing' ? (
@@ -38,10 +43,16 @@ export default function Home() {
           onJudgesSelected={handleJudgeSelection}
           onBackToLanding={handleBackToLanding}
         />
-      ) : (
+      ) : currentStep === 'room' ? (
         <SharkTankRoom 
           judges={selectedJudges} 
           onBackToSelection={handleBackToSelection}
+          onPresentationComplete={handlePresentationComplete}
+        />
+      ) : (
+        <PerformanceDashboard 
+          judges={selectedJudges}
+          onBackToLanding={handleBackToLanding}
         />
       )}
     </main>

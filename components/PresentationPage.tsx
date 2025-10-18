@@ -2,25 +2,111 @@
 
 import { useState, useEffect, useRef } from 'react'
 import SpeechRecognition from './SpeechRecognition'
+import TranscriptionPanel, { TranscriptionEntry } from './TranscriptionPanel'
 import { useHeyGenAvatar } from '../hooks/useHeyGenAvatar'
 import { Judge } from '../types/judge'
 
 interface PresentationPageProps {
   judges: Judge[]
   onBackToSelection: () => void
+  onPresentationComplete: () => void
 }
 
 const PRESENTATION_DURATION = 60 // 60 seconds
 
-export default function PresentationPage({ judges, onBackToSelection }: PresentationPageProps) {
+export default function PresentationPage({ judges, onBackToSelection, onPresentationComplete }: PresentationPageProps) {
   const [presentationText, setPresentationText] = useState('')
   const [isRecording, setIsRecording] = useState(false)
   const [timeRemaining, setTimeRemaining] = useState(PRESENTATION_DURATION)
   const [currentPhase, setCurrentPhase] = useState<'presentation' | 'questions' | 'scoring' | 'results'>('presentation')
+  const [transcriptions, setTranscriptions] = useState<TranscriptionEntry[]>([
+    {
+      id: 'mock-1',
+      speaker: 'Barbara Corcoran',
+      speakerType: 'avatar',
+      content: 'Welcome to Shark Tank! I\'m excited to hear about your business idea. Please go ahead and present your pitch.',
+      timestamp: new Date(Date.now() - 30000),
+      isFinal: true
+    },
+    {
+      id: 'mock-2',
+      speaker: 'You',
+      speakerType: 'user',
+      content: 'Thank you Barbara! My name is Sarah and I\'m the founder of EcoClean, a revolutionary cleaning product that...',
+      timestamp: new Date(Date.now() - 25000),
+      isFinal: true
+    },
+    {
+      id: 'mock-3',
+      speaker: 'Barbara Corcoran',
+      speakerType: 'avatar',
+      content: 'That sounds interesting! What makes your product different from what\'s already on the market?',
+      timestamp: new Date(Date.now() - 20000),
+      isFinal: true
+    },
+    {
+      id: 'mock-4',
+      speaker: 'You',
+      speakerType: 'user',
+      content: 'Great question! Our unique formula uses 100% natural ingredients and is completely biodegradable, unlike traditional cleaners that...',
+      timestamp: new Date(Date.now() - 15000),
+      isFinal: true
+    },
+    {
+      id: 'mock-5',
+      speaker: 'Barbara Corcoran',
+      speakerType: 'avatar',
+      content: 'I like the environmental angle. What\'s your current revenue and how are you planning to scale?',
+      timestamp: new Date(Date.now() - 10000),
+      isFinal: true
+    },
+    {
+      id: 'mock-6',
+      speaker: 'You',
+      speakerType: 'user',
+      content: 'We\'ve generated $50,000 in sales in our first 6 months, and we\'re looking to expand into major retail chains...',
+      timestamp: new Date(Date.now() - 5000),
+      isFinal: false
+    }
+  ])
   
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const videoRef = useRef<HTMLVideoElement | null>(null)
+  const transcriptionIdRef = useRef(0)
   const { startAvatar, stopAvatar, speak, stream, isLoading, error } = useHeyGenAvatar()
+
+  // Helper functions for transcription management
+  const addTranscription = (speaker: string, speakerType: 'user' | 'avatar', content: string, isFinal: boolean = true) => {
+    const id = `transcription-${++transcriptionIdRef.current}`
+    const entry: TranscriptionEntry = {
+      id,
+      speaker,
+      speakerType,
+      content,
+      timestamp: new Date(),
+      isFinal
+    }
+    
+    setTranscriptions(prev => {
+      // If it's an interim result, update the last entry if it's also interim
+      if (!isFinal) {
+        const lastEntry = prev[prev.length - 1]
+        if (lastEntry && !lastEntry.isFinal && lastEntry.speaker === speaker && lastEntry.speakerType === speakerType) {
+          return [...prev.slice(0, -1), { ...lastEntry, content, timestamp: new Date() }]
+        }
+      }
+      
+      return [...prev, entry]
+    })
+  }
+
+  const updateUserTranscription = (content: string, isFinal: boolean = false) => {
+    addTranscription('You', 'user', content, isFinal)
+  }
+
+  const addAvatarTranscription = (judgeName: string, content: string) => {
+    addTranscription(judgeName, 'avatar', content, true)
+  }
 
   // Handle video stream assignment
   useEffect(() => {
@@ -53,7 +139,9 @@ export default function PresentationPage({ judges, onBackToSelection }: Presenta
     
     if (barbaraJudge?.isHeyGenAvatar && barbaraJudge.heygenAvatarId) {
       console.log('🎭 Starting HeyGen avatar for Barbara with ID:', barbaraJudge.heygenAvatarId)
-      startAvatar(barbaraJudge.heygenAvatarId).catch(err => {
+      startAvatar(barbaraJudge.heygenAvatarId, (text) => {
+        addAvatarTranscription(barbaraJudge.name, text)
+      }).catch(err => {
         console.error('❌ Failed to start HeyGen avatar:', err)
       })
     } else {
@@ -98,7 +186,13 @@ export default function PresentationPage({ judges, onBackToSelection }: Presenta
 
   const handlePresentationComplete = (text: string) => {
     setPresentationText(text)
+    updateUserTranscription(text, true) // Mark as final
     setCurrentPhase('questions')
+  }
+
+  const handlePresentationUpdate = (text: string) => {
+    setPresentationText(text)
+    updateUserTranscription(text, false) // Mark as interim
   }
 
   const handleSpeakQuestion = (judgeId: string, text: string) => {
@@ -137,7 +231,7 @@ export default function PresentationPage({ judges, onBackToSelection }: Presenta
         </button>
         
         <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-500 drop-shadow-2xl">
-          🦈 SHARK TANK PRESENTATION
+          🦈 THE SHARKS ARE WATCHING
         </h1>
         
         {/* Timer */}
@@ -150,13 +244,11 @@ export default function PresentationPage({ judges, onBackToSelection }: Presenta
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-8">
+      <div className="relative z-10 flex-1 flex p-8 gap-6">
+        {/* Left Panel - Main Content */}
+        <div className="flex-1 flex flex-col items-center">
         {/* Judges Panel */}
-        <div className="mb-12">
-          <h2 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-500 text-center mb-8 drop-shadow-2xl">
-            THE SHARKS ARE WATCHING
-          </h2>
-          
+        <div className="mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl">
             {judges.map((judge) => (
               <div key={judge.id} className="relative group">
@@ -224,41 +316,64 @@ export default function PresentationPage({ judges, onBackToSelection }: Presenta
         </div>
 
         {/* Recording Controls */}
-        <div className="w-full max-w-4xl">
+        <div className="w-full max-w-4xl mt-6">
           <div className="bg-black/60 backdrop-blur-xl rounded-2xl p-8 border border-yellow-400/30 shadow-2xl shadow-yellow-400/10">
             <SpeechRecognition
-              onTextUpdate={setPresentationText}
+              onTextUpdate={handlePresentationUpdate}
               onComplete={handlePresentationComplete}
               isRecording={isRecording}
               setIsRecording={setIsRecording}
             />
+            
+            {/* Complete Button */}
+            <div className="mt-6 text-center">
+              <button
+                onClick={onPresentationComplete}
+                className="px-8 py-4 bg-gradient-to-r from-yellow-400 to-yellow-500 text-black text-xl font-black rounded-xl hover:from-yellow-300 hover:to-yellow-400 transform hover:scale-105 transition-all duration-300 shadow-2xl shadow-yellow-400/30 border-2 border-yellow-300/50"
+              >
+                🎯 Complete Presentation
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Error Display */}
-        {error && (
-          <div className="mt-6 p-6 bg-red-500/20 border border-red-500/50 rounded-xl text-red-200 backdrop-blur-xl shadow-2xl">
-            <div className="font-bold text-lg mb-2">⚠️ HeyGen Error:</div>
-            <div className="text-sm font-mono">{error}</div>
-          </div>
-        )}
+          {/* Error Display */}
+          {error && (
+            <div className="mt-4 p-6 bg-red-500/20 border border-red-500/50 rounded-xl text-red-200 backdrop-blur-xl shadow-2xl">
+              <div className="font-bold text-lg mb-2">⚠️ HeyGen Error:</div>
+              <div className="text-sm font-mono">{error}</div>
+            </div>
+          )}
 
-        {/* Debug Info */}
-        <div className="mt-6 p-6 bg-black/60 backdrop-blur-xl rounded-xl text-white/70 text-sm border border-cyan-400/20 shadow-lg">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-            <div>
-              <div className="text-cyan-300 font-bold mb-1">HeyGen Status</div>
-              <div className="text-yellow-400">{isLoading ? 'Loading...' : stream ? 'Connected' : 'Disconnected'}</div>
-            </div>
-            <div>
-              <div className="text-cyan-300 font-bold mb-1">Stream ID</div>
-              <div className="text-yellow-400 font-mono text-xs">{stream?.id || 'None'}</div>
-            </div>
-            <div>
-              <div className="text-cyan-300 font-bold mb-1">Current Phase</div>
-              <div className="text-yellow-400 uppercase font-bold">{currentPhase}</div>
+          {/* Debug Info */}
+          <div className="mt-4 p-6 bg-black/60 backdrop-blur-xl rounded-xl text-white/70 text-sm border border-cyan-400/20 shadow-lg">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+              <div>
+                <div className="text-cyan-300 font-bold mb-1">HeyGen Status</div>
+                <div className="text-yellow-400">{isLoading ? 'Loading...' : stream ? 'Connected' : 'Disconnected'}</div>
+              </div>
+              <div>
+                <div className="text-cyan-300 font-bold mb-1">Stream ID</div>
+                <div className="text-yellow-400 font-mono text-xs">{stream?.id || 'None'}</div>
+              </div>
+              <div>
+                <div className="text-cyan-300 font-bold mb-1">Current Phase</div>
+                <div className="text-yellow-400 uppercase font-bold">{currentPhase}</div>
+              </div>
             </div>
           </div>
+        </div>
+
+        {/* Right Panel - Transcription */}
+        <div className="w-96 h-full hidden lg:block">
+          <TranscriptionPanel transcriptions={transcriptions} />
+        </div>
+      </div>
+
+      {/* Mobile Transcription Panel */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-20">
+        <div className="h-48">
+          <TranscriptionPanel transcriptions={transcriptions} className="h-full rounded-t-2xl" />
         </div>
       </div>
     </div>

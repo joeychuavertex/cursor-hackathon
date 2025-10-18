@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Mic, MicOff, Volume2 } from 'lucide-react'
+import { Mic, MicOff, Volume2, Edit3, Type } from 'lucide-react'
 
 interface SpeechRecognitionProps {
   onTextUpdate: (text: string) => void
@@ -19,6 +19,7 @@ export default function SpeechRecognition({
   const [transcript, setTranscript] = useState('')
   const [isSupported, setIsSupported] = useState(false)
   const [recognition, setRecognition] = useState<any>(null)
+  const [inputMode, setInputMode] = useState<'write' | 'record'>('write')
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'webkitSpeechRecognition' in window) {
@@ -79,89 +80,146 @@ export default function SpeechRecognition({
     }
   }
 
-  if (!isSupported) {
-    return (
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 text-center">
-          <h3 className="text-2xl font-bold text-white mb-4">Speech Recognition Not Supported</h3>
-          <p className="text-blue-200 mb-6">
-            Your browser doesn't support speech recognition. Please use Chrome or Safari.
-          </p>
-          <div className="bg-white/20 rounded-lg p-4">
-            <textarea
-              value={transcript}
-              onChange={(e) => {
-                setTranscript(e.target.value)
-                onTextUpdate(e.target.value)
-              }}
-              placeholder="Type your pitch here..."
-              className="w-full h-32 bg-transparent text-white placeholder-blue-300 resize-none outline-none"
-            />
-            <button
-              onClick={() => onComplete(transcript)}
-              className="mt-4 px-6 py-2 bg-judge-gold text-white rounded-lg hover:bg-yellow-500 transition-all"
-            >
-              Submit Pitch
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8">
-        <div className="text-center mb-6">
-          <h3 className="text-2xl font-bold text-white mb-4">Your Pitch</h3>
-          <p className="text-blue-200 mb-6">
-            Click the microphone to start recording your presentation
-          </p>
+    <div className="max-w-4xl mx-auto">
+      <div className="bg-black/60 backdrop-blur-xl rounded-2xl p-8 border border-yellow-400/30 shadow-2xl shadow-yellow-400/10">
+        <div className="text-center mb-8">
+          <h3 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-500 mb-4 drop-shadow-2xl">
+            🦈 YOUR PITCH
+          </h3>
         </div>
 
-        {/* Recording Controls */}
-        <div className="flex justify-center mb-6">
-          <button
-            onClick={isRecording ? stopRecording : startRecording}
-            className={`w-20 h-20 rounded-full flex items-center justify-center text-white transition-all transform hover:scale-105 ${
-              isRecording 
-                ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
-                : 'bg-judge-gold hover:bg-yellow-500'
-            }`}
-          >
-            {isRecording ? (
-              <MicOff className="w-8 h-8" />
+        {/* Input Mode Toggle */}
+        <div className="flex justify-center mb-8">
+          <div className="bg-black/40 backdrop-blur-lg rounded-xl p-2 border border-yellow-400/20">
+            <div className="flex gap-2">
+              <button
+                onClick={() => setInputMode('write')}
+                className={`px-6 py-3 rounded-lg font-bold transition-all duration-300 flex items-center gap-2 ${
+                  inputMode === 'write'
+                    ? 'bg-yellow-400 text-black shadow-lg shadow-yellow-400/30'
+                    : 'text-white hover:bg-white/10'
+                }`}
+              >
+                <Type className="w-5 h-5" />
+                Write
+              </button>
+              <button
+                onClick={() => setInputMode('record')}
+                className={`px-6 py-3 rounded-lg font-bold transition-all duration-300 flex items-center gap-2 ${
+                  inputMode === 'record'
+                    ? 'bg-yellow-400 text-black shadow-lg shadow-yellow-400/30'
+                    : 'text-white hover:bg-white/10'
+                }`}
+              >
+                <Mic className="w-5 h-5" />
+                Record
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Write Mode */}
+        {inputMode === 'write' && (
+          <div className="space-y-6">
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 text-cyan-300 mb-4">
+                <Edit3 className="w-6 h-6" />
+                <span className="text-xl font-bold">Write Your Business Proposal</span>
+              </div>
+              <p className="text-white/70">
+                Type your pitch content below. Be clear, concise, and compelling!
+              </p>
+            </div>
+
+            <div className="bg-black/40 backdrop-blur-lg rounded-xl p-6 border border-yellow-400/20">
+              <textarea
+                value={transcript}
+                onChange={(e) => {
+                  setTranscript(e.target.value)
+                  onTextUpdate(e.target.value)
+                }}
+                placeholder="Enter your business proposal here...\n\nInclude:\n• Your business idea\n• Target market\n• Revenue model\n• Funding requirements\n• Why the sharks should invest"
+                className="w-full h-64 bg-transparent text-white placeholder-white/50 resize-none outline-none text-lg leading-relaxed"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Record Mode */}
+        {inputMode === 'record' && (
+          <div className="space-y-6">
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 text-cyan-300 mb-4">
+                <Volume2 className="w-6 h-6" />
+                <span className="text-xl font-bold">Record Your Presentation</span>
+              </div>
+              <p className="text-white/70">
+                {isSupported 
+                  ? "Click the microphone to start recording your pitch"
+                  : "Speech recognition not supported. Please use Chrome or Safari for voice recording."
+                }
+              </p>
+            </div>
+
+            {isSupported ? (
+              <>
+                {/* Recording Controls */}
+                <div className="flex justify-center">
+                  <button
+                    onClick={isRecording ? stopRecording : startRecording}
+                    className={`w-24 h-24 rounded-full flex items-center justify-center text-white transition-all transform hover:scale-105 shadow-2xl ${
+                      isRecording 
+                        ? 'bg-red-500 hover:bg-red-600 animate-pulse shadow-red-500/50' 
+                        : 'bg-yellow-400 hover:bg-yellow-500 shadow-yellow-400/50'
+                    }`}
+                  >
+                    {isRecording ? (
+                      <MicOff className="w-10 h-10" />
+                    ) : (
+                      <Mic className="w-10 h-10" />
+                    )}
+                  </button>
+                </div>
+
+                {/* Status Indicator */}
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-2 text-white">
+                    <Volume2 className={`w-6 h-6 ${isRecording ? 'animate-pulse' : ''}`} />
+                    <span className="text-lg font-bold">
+                      {isRecording ? 'Recording...' : 'Ready to record'}
+                    </span>
+                  </div>
+                </div>
+              </>
             ) : (
-              <Mic className="w-8 h-8" />
+              <div className="text-center py-8">
+                <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-6">
+                  <p className="text-red-200 font-bold text-lg mb-2">⚠️ Speech Recognition Not Supported</p>
+                  <p className="text-red-300">
+                    Your browser doesn't support speech recognition. Please use Chrome or Safari for voice recording.
+                  </p>
+                </div>
+              </div>
             )}
-          </button>
-        </div>
 
-        {/* Status Indicator */}
-        <div className="text-center mb-6">
-          <div className="flex items-center justify-center gap-2 text-white">
-            <Volume2 className={`w-5 h-5 ${isRecording ? 'animate-pulse' : ''}`} />
-            <span className="font-semibold">
-              {isRecording ? 'Recording...' : 'Ready to record'}
-            </span>
+            {/* Transcript Display */}
+            <div className="bg-black/40 backdrop-blur-lg rounded-xl p-6 border border-yellow-400/20 min-h-32">
+              <div className="text-white whitespace-pre-wrap text-lg leading-relaxed">
+                {transcript || 'Your speech will appear here...'}
+              </div>
+            </div>
           </div>
-        </div>
-
-        {/* Transcript Display */}
-        <div className="bg-white/20 rounded-lg p-4 min-h-32">
-          <div className="text-white whitespace-pre-wrap">
-            {transcript || 'Your speech will appear here...'}
-          </div>
-        </div>
+        )}
 
         {/* Action Buttons */}
-        <div className="flex justify-center gap-4 mt-6">
+        <div className="flex justify-center gap-4 mt-8">
           {transcript && (
             <button
               onClick={() => onComplete(transcript)}
-              className="px-8 py-3 bg-judge-gold text-white rounded-lg hover:bg-yellow-500 transition-all font-semibold"
+              className="px-10 py-4 bg-yellow-400 text-black rounded-xl hover:bg-yellow-500 transition-all font-black text-lg shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50 transform hover:scale-105"
             >
-              Submit Pitch
+              🦈 SUBMIT PITCH
             </button>
           )}
           
@@ -171,7 +229,7 @@ export default function SpeechRecognition({
                 setTranscript('')
                 onTextUpdate('')
               }}
-              className="px-8 py-3 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all font-semibold"
+              className="px-10 py-4 bg-white/20 text-white rounded-xl hover:bg-white/30 transition-all font-bold text-lg border border-white/30 hover:border-white/50"
             >
               Clear
             </button>
