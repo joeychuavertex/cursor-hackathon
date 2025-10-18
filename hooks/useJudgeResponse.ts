@@ -8,8 +8,13 @@ interface GenerateResponseParams {
   message: string
 }
 
+interface JudgeResponseData {
+  judgeReply: string
+  audioBase64: string | null
+}
+
 interface UseJudgeResponseReturn {
-  generateResponse: (params: GenerateResponseParams) => Promise<string>
+  generateResponse: (params: GenerateResponseParams) => Promise<JudgeResponseData>
   isGenerating: boolean
   error: string | null
 }
@@ -18,7 +23,7 @@ export function useJudgeResponse(): UseJudgeResponseReturn {
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const generateResponse = async ({ conversationId, message }: GenerateResponseParams): Promise<string> => {
+  const generateResponse = async ({ conversationId, message }: GenerateResponseParams): Promise<JudgeResponseData> => {
     console.log('🎯 generateResponse called with:', {
       conversationId,
       messageLength: message.length,
@@ -64,14 +69,29 @@ export function useJudgeResponse(): UseJudgeResponseReturn {
       }
 
       const data = await response.json()
-      console.log('✅ Response data:', data)
+      console.log('✅ Response data received:', {
+        hasJudgeReply: !!data.judge_reply,
+        hasAudio: !!data.audio_base64,
+        judgeReplyLength: data.judge_reply?.length || 0
+      })
 
       const judgeReply = data.judge_reply || ''
+      const audioBase64 = data.audio_base64 || null
+
       if (!judgeReply) {
         console.warn('⚠️ Empty judge reply received')
       }
 
-      return judgeReply
+      if (audioBase64) {
+        console.log('🎵 Audio data received, ready to play')
+      } else {
+        console.warn('⚠️ No audio data in response')
+      }
+
+      return {
+        judgeReply,
+        audioBase64
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to generate judge response'
       console.error('❌ Error generating judge response:', err)

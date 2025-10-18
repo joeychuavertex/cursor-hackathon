@@ -6,6 +6,7 @@ import TranscriptionPanel, { TranscriptionEntry } from './TranscriptionPanel'
 import { useHeyGenAvatar } from '../hooks/useHeyGenAvatar'
 import { useJudgeResponse } from '../hooks/useJudgeResponse'
 import { Judge } from '../types/judge'
+import { useElevenLabs } from '../hooks/useElevenLabs'
 
 interface PresentationPageProps {
   judges: Judge[]
@@ -37,6 +38,7 @@ export default function PresentationPage({ judges, onBackToSelection, onPresenta
   const transcriptionIdRef = useRef(0)
   const { startAvatar, stopAvatar, speak, stream, isLoading, error } = useHeyGenAvatar()
   const { generateResponse, isGenerating, error: judgeError } = useJudgeResponse()
+  const { playAudioFromBase64 } = useElevenLabs()
 
   // Helper functions for transcription management
   const addTranscription = (speaker: string, speakerType: 'user' | 'avatar', content: string, isFinal: boolean = true) => {
@@ -157,7 +159,7 @@ export default function PresentationPage({ judges, onBackToSelection, onPresenta
         console.log('📤 Sending pitch to judges...', { conversationId, pitchLength: text.length })
 
         // Generate response from the judge
-        const judgeReply = await generateResponse({
+        const { judgeReply, audioBase64 } = await generateResponse({
           conversationId,
           message: text
         })
@@ -168,9 +170,22 @@ export default function PresentationPage({ judges, onBackToSelection, onPresenta
         const activeJudge = judges.find(j => j.isHeyGenAvatar) || judges[0]
         addAvatarTranscription(activeJudge.name, judgeReply)
 
-        // If HeyGen avatar is active, make it speak the response
+        // Play audio based on judge type
         if (activeJudge.isHeyGenAvatar && speak) {
+          // If HeyGen avatar is active, make it speak the response
+          console.log('🎬 Using HeyGen avatar to speak')
           await speak(judgeReply)
+        } else if (audioBase64) {
+          // Otherwise use the ElevenLabs audio
+          console.log('🔊 Playing audio from ElevenLabs')
+          try {
+            await playAudioFromBase64(audioBase64)
+            console.log('✅ Audio playback completed')
+          } catch (audioError) {
+            console.error('❌ Error playing audio:', audioError)
+          }
+        } else {
+          console.warn('⚠️ No audio available to play')
         }
 
         setCurrentPhase('questions')
