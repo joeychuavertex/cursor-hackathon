@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Judge } from '@/types/judge'
-import { JUDGES } from '@/lib/config'
-import { Check, Users, Star, Brain, DollarSign, ArrowLeft, Crown, Zap } from 'lucide-react'
+import { useJudges } from '@/hooks/useJudges'
+import { Check, Users, Star, Brain, DollarSign, ArrowLeft, Crown, Zap, Loader2, AlertCircle } from 'lucide-react'
 
 interface JudgeSelectionProps {
   onJudgesSelected: (judges: Judge[]) => void
@@ -13,6 +13,7 @@ interface JudgeSelectionProps {
 
 export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: JudgeSelectionProps) {
   const [selectedJudges, setSelectedJudges] = useState<Judge[]>([])
+  const { judges, loading, error, refetch } = useJudges()
 
   const toggleJudge = (judge: Judge) => {
     setSelectedJudges(prev => {
@@ -123,82 +124,123 @@ export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: Ju
             </motion.div>
           </motion.div>
 
-        <motion.div 
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16"
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.8, duration: 1 }}
-        >
-          {JUDGES.map((judge, index) => {
-            const isSelected = selectedJudges.find(j => j.id === judge.id)
-            return (
-              <motion.div
-                key={judge.id}
-                initial={{ opacity: 0, y: 30, scale: 0.9 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ delay: 2 + index * 0.1, duration: 0.6 }}
-                onClick={() => toggleJudge(judge)}
-                className={`relative cursor-pointer transform transition-all duration-300 hover:scale-105 ${
-                  isSelected ? 'ring-4 ring-yellow-400 shadow-2xl shadow-yellow-400/50' : 'hover:ring-2 hover:ring-cyan-400 hover:shadow-xl hover:shadow-cyan-400/30'
-                }`}
-              >
-                <div className="bg-black/60 backdrop-blur-xl rounded-2xl p-6 shadow-2xl border border-white/20 hover:border-yellow-400/50 transition-all duration-300">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-300">{judge.name}</h3>
+        {/* Loading State */}
+        {loading && (
+          <motion.div 
+            className="flex flex-col items-center justify-center py-16"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.8, duration: 1 }}
+          >
+            <Loader2 className="w-12 h-12 text-yellow-400 animate-spin mb-4" />
+            <p className="text-cyan-300 text-lg">Loading judges...</p>
+          </motion.div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <motion.div 
+            className="flex flex-col items-center justify-center py-16"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.8, duration: 1 }}
+          >
+            <AlertCircle className="w-12 h-12 text-red-400 mb-4" />
+            <p className="text-red-300 text-lg mb-4">{error}</p>
+            <button
+              onClick={refetch}
+              className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+            >
+              Try Again
+            </button>
+          </motion.div>
+        )}
+
+        {/* Judges Grid */}
+        {!loading && !error && (
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16"
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.8, duration: 1 }}
+          >
+            {judges.map((judge, index) => {
+              const isSelected = selectedJudges.find(j => j.id === judge.id)
+              return (
+                <motion.div
+                  key={judge.id}
+                  initial={{ opacity: 0, y: 30, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ delay: 2 + index * 0.1, duration: 0.6 }}
+                  onClick={() => toggleJudge(judge)}
+                  className={`relative cursor-pointer transform transition-all duration-300 hover:scale-105 ${
+                    isSelected ? 'ring-4 ring-yellow-400 shadow-2xl shadow-yellow-400/50' : 'hover:ring-2 hover:ring-cyan-400 hover:shadow-xl hover:shadow-cyan-400/30'
+                  }`}
+                >
+                  <div className="bg-black/60 backdrop-blur-xl rounded-2xl p-6 shadow-2xl border border-white/20 hover:border-yellow-400/50 transition-all duration-300">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-300">{judge.name}</h3>
+                      {isSelected && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center"
+                        >
+                          <Check className="w-5 h-5 text-black" />
+                        </motion.div>
+                      )}
+                    </div>
+                    
+                    <div className="mb-6">
+                      <p className="text-cyan-200 text-sm mb-3 font-medium">{judge.personality}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {judge.expertise.map((skill: string, skillIndex: number) => (
+                          <span
+                            key={skillIndex}
+                            className="px-3 py-1 bg-cyan-400/20 text-cyan-300 text-xs rounded-full border border-cyan-400/30"
+                          >
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 text-sm text-cyan-200">
+                        <Brain className="w-4 h-4 text-cyan-400" />
+                        <span className="font-medium">Focus: {judge.scoringCriteria.financials > 0.3 ? 'Financials' : 
+                                     judge.scoringCriteria.innovation > 0.3 ? 'Innovation' : 
+                                     judge.scoringCriteria.marketPotential > 0.3 ? 'Market' : 'Team'}</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm text-cyan-200">
+                        <DollarSign className="w-4 h-4 text-yellow-400" />
+                        <span className="font-medium">Style: {judge.investmentStyle || judge.personality.split(',')[0]}</span>
+                      </div>
+                      {judge.causes && judge.causes.length > 0 && (
+                        <div className="flex items-center gap-3 text-sm text-cyan-200">
+                          <Star className="w-4 h-4 text-purple-400" />
+                          <span className="font-medium">Causes: {judge.causes.slice(0, 2).join(', ')}</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Selection indicator */}
                     {isSelected && (
                       <motion.div
+                        className="absolute top-2 right-2 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center"
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        className="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center"
+                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
                       >
-                        <Check className="w-5 h-5 text-black" />
+                        <Crown className="w-3 h-3 text-black" />
                       </motion.div>
                     )}
                   </div>
-                  
-                  <div className="mb-6">
-                    <p className="text-cyan-200 text-sm mb-3 font-medium">{judge.personality}</p>
-                    <div className="flex flex-wrap gap-2">
-                      {judge.expertise.map((skill: string, skillIndex: number) => (
-                        <span
-                          key={skillIndex}
-                          className="px-3 py-1 bg-cyan-400/20 text-cyan-300 text-xs rounded-full border border-cyan-400/30"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3 text-sm text-cyan-200">
-                      <Brain className="w-4 h-4 text-cyan-400" />
-                      <span className="font-medium">Focus: {judge.scoringCriteria.financials > 0.3 ? 'Financials' : 
-                                   judge.scoringCriteria.innovation > 0.3 ? 'Innovation' : 
-                                   judge.scoringCriteria.marketPotential > 0.3 ? 'Market' : 'Team'}</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-sm text-cyan-200">
-                      <DollarSign className="w-4 h-4 text-yellow-400" />
-                      <span className="font-medium">Style: {judge.personality.split(',')[0]}</span>
-                    </div>
-                  </div>
-                  
-                  {/* Selection indicator */}
-                  {isSelected && (
-                    <motion.div
-                      className="absolute top-2 right-2 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                    >
-                      <Crown className="w-3 h-3 text-black" />
-                    </motion.div>
-                  )}
-                </div>
-              </motion.div>
-            )
-          })}
-        </motion.div>
+                </motion.div>
+              )
+            })}
+          </motion.div>
+        )}
 
         <motion.div 
           className="text-center"

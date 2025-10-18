@@ -74,6 +74,7 @@ class NewMessageRequest(BaseModel):
     new_message: str
 
 
+
 def get_judge_system_prompt(name: str) -> str:
     personas = load_personas()
     judge_persona: JudgePersona = get_judge_persona(name, personas)
@@ -90,14 +91,104 @@ def get_judge_system_prompt(name: str) -> str:
     """
 
 class SelectJudgeRequest(BaseModel):
-    judge: Literal["altman", "elon", "zuck"]
+    judge: Literal["altman", "elon", "zuck"] = None
 
 class EndConversationRequest(BaseModel):
     conversation_id: str
 
-# --- Endpoint 1: Select a judge and start conversation ---
+# --- Endpoint 1: Get judges list or select a judge ---
 @router.post("/select")
-async def select_judge(request: SelectJudgeRequest, authorization: str = Header(...)):
+async def select_judge(request: SelectJudgeRequest = None, authorization: str = Header(None)):
+    """
+    Endpoint to either:
+    1. Get list of available judges (no auth required)
+    2. Select a judge and start conversation (auth required)
+    """
+    
+    # If no specific judge is requested, return the list of available judges
+    if not request or not request.judge:
+        try:
+            personas = load_personas()
+            judges = []
+            for judge_id, persona in personas.items():
+                # Map investment_style to scoring criteria
+                scoring_criteria = {
+                    "innovation": 0.2,
+                    "marketPotential": 0.2,
+                    "team": 0.2,
+                    "financials": 0.2,
+                    "presentation": 0.2
+                }
+                
+                # Adjust scoring based on investment style
+                if persona["investment_style"] == "risk-taker":
+                    scoring_criteria["innovation"] = 0.4
+                    scoring_criteria["marketPotential"] = 0.3
+                    scoring_criteria["financials"] = 0.1
+                elif persona["investment_style"] == "analytical":
+                    scoring_criteria["financials"] = 0.4
+                    scoring_criteria["innovation"] = 0.1
+                elif persona["investment_style"] == "emotional":
+                    scoring_criteria["team"] = 0.4
+                    scoring_criteria["presentation"] = 0.3
+                elif persona["investment_style"] == "balanced":
+                    # Keep default balanced scoring
+                    pass
+                
+                judge = {
+                    "id": judge_id,
+                    "name": persona["name"],
+                    "personality": ", ".join(persona["personality_traits"]),
+                    "expertise": persona["specialties"],
+                    "avatarUrl": "",
+                    "voiceId": f"{judge_id}_voice",
+                    "isHeyGenAvatar": True,
+                    "heygenAvatarId": os.getenv("NEXT_PUBLIC_HEYGEN_AVATAR_ID", "Ann_Therapist_public"),
+                    "microExpressions": [
+                        {
+                            "id": "smile",
+                            "name": "Approving Smile",
+                            "trigger": "positive_feedback",
+                            "duration": 2000,
+                            "intensity": 0.8
+                        },
+                        {
+                            "id": "frown",
+                            "name": "Concerned Frown",
+                            "trigger": "financial_concern",
+                            "duration": 1500,
+                            "intensity": 0.6
+                        },
+                        {
+                            "id": "nod",
+                            "name": "Understanding Nod",
+                            "trigger": "listening",
+                            "duration": 1000,
+                            "intensity": 0.4
+                        },
+                        {
+                            "id": "raise_eyebrow",
+                            "name": "Skeptical Look",
+                            "trigger": "skepticism",
+                            "duration": 1200,
+                            "intensity": 0.7
+                        }
+                    ],
+                    "scoringCriteria": scoring_criteria,
+                    "investmentStyle": persona["investment_style"],
+                    "causes": persona["causes"],
+                    "catchphrases": persona["catchphrases"]
+                }
+                judges.append(judge)
+            
+            return {"judges": judges}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error loading judges: {e}")
+    
+    # If a specific judge is requested, require authentication and start conversation
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authentication required to select a judge")
+    
     token = authorization.replace("Bearer ", "")
     supabase = get_supabase_client(token)    
     user_id = supabase.auth.get_user()

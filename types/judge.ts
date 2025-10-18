@@ -9,6 +9,9 @@ export interface Judge {
   scoringCriteria: ScoringCriteria
   isHeyGenAvatar?: boolean
   heygenAvatarId?: string
+  investmentStyle?: string
+  causes?: string[]
+  catchphrases?: string[]
 }
 
 export interface MicroExpression {
