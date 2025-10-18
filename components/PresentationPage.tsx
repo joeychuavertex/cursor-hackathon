@@ -190,6 +190,7 @@ export default function PresentationPage({ judges, onBackToSelection, onPresenta
 
         // Stop any audio that might be playing
         stopAllAudio()
+        setSpeaker('')
         // Generate response from the judge
         const { judgeReply, audioBase64 } = await generateResponse({
           conversationId,
