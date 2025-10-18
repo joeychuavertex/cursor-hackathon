@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import SpeechRecognition from './SpeechRecognition'
 import TranscriptionPanel, { TranscriptionEntry } from './TranscriptionPanel'
 import { useHeyGenAvatar } from '../hooks/useHeyGenAvatar'
+import { useJudgeChat } from '../hooks/useJudgeChat'
 import { Judge } from '../types/judge'
 
 interface PresentationPageProps {
@@ -74,6 +75,7 @@ export default function PresentationPage({ judges, onBackToSelection, onPresenta
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const transcriptionIdRef = useRef(0)
   const { startAvatar, stopAvatar, speak, stream, isLoading, error } = useHeyGenAvatar()
+  const { sendMessage, isLoading: isJudgeLoading, error: judgeError } = useJudgeChat()
 
   // Helper functions for transcription management
   const addTranscription = (speaker: string, speakerType: 'user' | 'avatar', content: string, isFinal: boolean = true) => {
@@ -184,9 +186,31 @@ export default function PresentationPage({ judges, onBackToSelection, onPresenta
     }
   }, [stopAvatar])
 
-  const handlePresentationComplete = (text: string) => {
+  const handlePresentationComplete = async (text: string) => {
     setPresentationText(text)
     updateUserTranscription(text, true) // Mark as final
+    
+    // Call judge API to get response
+    try {
+      const barbaraJudge = judges.find(j => j.id === 'barbara')
+      if (barbaraJudge) {
+        // Add loading indicator for judge response
+        addTranscription('Barbara Corcoran', 'avatar', 'Thinking about your pitch...', false)
+        
+        const judgeResponse = await sendMessage('barbara', text)
+        
+        // Remove the loading message and add the actual response
+        setTranscriptions(prev => prev.slice(0, -1))
+        addAvatarTranscription('Barbara Corcoran', judgeResponse)
+        
+        // Make the avatar speak the response
+        speak(judgeResponse)
+      }
+    } catch (error) {
+      console.error('Error getting judge response:', error)
+      addAvatarTranscription('Barbara Corcoran', 'I apologize, but I\'m having trouble processing your pitch right now. Please try again.')
+    }
+    
     setCurrentPhase('questions')
   }
 
@@ -345,9 +369,17 @@ export default function PresentationPage({ judges, onBackToSelection, onPresenta
             </div>
           )}
 
+          {/* Judge API Error Display */}
+          {judgeError && (
+            <div className="mt-4 p-6 bg-red-500/20 border border-red-500/50 rounded-xl text-red-200 backdrop-blur-xl shadow-2xl">
+              <div className="font-bold text-lg mb-2">⚠️ Judge API Error:</div>
+              <div className="text-sm font-mono">{judgeError}</div>
+            </div>
+          )}
+
           {/* Debug Info */}
           <div className="mt-4 p-6 bg-black/60 backdrop-blur-xl rounded-xl text-white/70 text-sm border border-cyan-400/20 shadow-lg">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
               <div>
                 <div className="text-cyan-300 font-bold mb-1">HeyGen Status</div>
                 <div className="text-yellow-400">{isLoading ? 'Loading...' : stream ? 'Connected' : 'Disconnected'}</div>
@@ -355,6 +387,10 @@ export default function PresentationPage({ judges, onBackToSelection, onPresenta
               <div>
                 <div className="text-cyan-300 font-bold mb-1">Stream ID</div>
                 <div className="text-yellow-400 font-mono text-xs">{stream?.id || 'None'}</div>
+              </div>
+              <div>
+                <div className="text-cyan-300 font-bold mb-1">Judge API</div>
+                <div className="text-yellow-400">{isJudgeLoading ? 'Processing...' : 'Ready'}</div>
               </div>
               <div>
                 <div className="text-cyan-300 font-bold mb-1">Current Phase</div>

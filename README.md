@@ -18,6 +18,7 @@ An immersive AI-powered Shark Tank experience featuring realistic judge avatars 
 - **🎵 Voice Synthesis**: Hear judges speak with realistic voices using ElevenLabs
 - **💾 Persistent Memory**: Judges remember your previous interactions using Mem0
 - **📈 Session History**: Track your pitching progress with Supabase
+- **🤖 Judge API Integration**: Real-time judge responses powered by OpenAI GPT-4 with conversation history
 
 ## 🛠️ Tech Stack
 
@@ -25,6 +26,7 @@ An immersive AI-powered Shark Tank experience featuring realistic judge avatars 
 - **3D Graphics**: Three.js, React Three Fiber
 - **AI & ML**: 
   - Gemini API for intelligent questioning and scoring
+  - OpenAI GPT-4 for judge responses and conversation
   - ElevenLabs for voice synthesis
   - Mem0 for persistent memory
   - Fal.ai for avatar generation
@@ -39,6 +41,7 @@ An immersive AI-powered Shark Tank experience featuring realistic judge avatars 
 - npm or yarn
 - API keys for the following services:
   - Gemini API
+  - OpenAI API (for judge responses)
   - ElevenLabs
   - Supabase
   - Fal.ai
@@ -67,6 +70,7 @@ cp .env.example .env.local
 4. Add your API keys to `.env.local`:
 ```env
 NEXT_PUBLIC_GEMINI_API_KEY=your_gemini_api_key
+OPENAI_API_KEY=your_openai_api_key
 NEXT_PUBLIC_ELEVENLABS_API_KEY=your_elevenlabs_api_key
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
@@ -74,14 +78,24 @@ NEXT_PUBLIC_FAL_KEY=your_fal_key
 NEXT_PUBLIC_MEM0_API_KEY=your_mem0_api_key
 NEXT_PUBLIC_GROQ_API_KEY=your_groq_api_key
 NEXT_PUBLIC_EXA_API_KEY=your_exa_api_key
+BACKEND_URL=http://localhost:8000
 ```
 
-5. Run the development server:
+5. Set up the Python backend:
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r REQUIREMENTS.TXT
+uvicorn main:app --reload --port 8000
+```
+
+6. Run the development server:
 ```bash
 npm run dev
 ```
 
-6. Open [http://localhost:3000](http://localhost:3000) in your browser.
+7. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 🎮 How to Use
 
@@ -99,9 +113,16 @@ npm run dev
 ```
 ├── app/                    # Next.js app directory
 │   ├── api/               # API routes
+│   │   └── judges/        # Judge API endpoints
+│   │       └── chat/      # Chat completion endpoint
 │   ├── globals.css        # Global styles
 │   ├── layout.tsx         # Root layout
 │   └── page.tsx           # Home page
+├── backend/               # Python FastAPI backend
+│   ├── api/               # Backend API modules
+│   │   └── judge.py       # Judge personality and chat logic
+│   ├── main.py            # FastAPI application entry point
+│   └── REQUIREMENTS.TXT   # Python dependencies
 ├── components/            # React components
 │   ├── LandingPage.tsx    # Cinematic landing page with Three.js
 │   ├── JudgeAvatar.tsx    # 3D judge avatar component
@@ -113,6 +134,7 @@ npm run dev
 │   └── SpeechRecognition.tsx # Speech input
 ├── hooks/                 # Custom React hooks
 │   ├── useGeminiAI.ts     # Gemini AI integration
+│   ├── useJudgeChat.ts    # Judge API integration
 │   ├── useElevenLabs.ts   # Voice synthesis
 │   ├── useSupabase.ts     # Database operations
 │   └── useMem0.ts         # Memory management
@@ -176,12 +198,37 @@ npm run dev
 - **Personality**: Tech entrepreneur with cybersecurity background
 - **3D Features**: Green-themed avatar with analytical, protective expressions
 
+## 🤖 Judge API Integration
+
+The application features a sophisticated judge API integration that provides realistic, personality-driven responses to business pitches:
+
+### Features
+- **Real-time Responses**: Judges respond immediately to your business proposal
+- **Conversation History**: Maintains context throughout the entire session
+- **Personality-driven**: Each judge responds according to their unique personality and expertise
+- **Live Transcription**: All responses appear in the real-time transcription panel
+- **Voice Synthesis**: Judge responses are spoken aloud using HeyGen avatars
+
+### How It Works
+1. **Pitch Submission**: When you complete your presentation, the text is sent to the judge API
+2. **AI Processing**: The backend uses OpenAI GPT-4 with judge-specific prompts to generate responses
+3. **Live Display**: Responses appear in the transcription panel with loading indicators
+4. **Voice Output**: The judge's response is spoken through the HeyGen avatar
+
+### API Endpoints
+- `POST /api/judges/chat` - Send message to judge and get response
+- `POST /backend/judges/generate` - Backend endpoint for AI processing
+
+### Configuration
+The judge personalities are defined in `backend/placeholder/personas.json` and can be customized to add new judges or modify existing ones.
+
 ## 🔧 Customization
 
 ### Adding New Judges
 1. Add judge configuration in `lib/config.ts`
 2. Define micro expressions and scoring criteria
 3. Add voice ID for ElevenLabs synthesis
+4. Add personality data in `backend/placeholder/personas.json`
 
 ### Modifying Scoring Criteria
 Edit the `scoringCriteria` object in judge configurations to adjust how each judge evaluates pitches.

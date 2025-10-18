@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Judge } from '@/types/judge'
 import { JUDGES } from '@/lib/config'
-import { Check, Users, Star, Brain, DollarSign, ArrowLeft, Crown, Zap } from 'lucide-react'
+import { Check, Users, Star, Brain, DollarSign, ArrowLeft, Crown, Zap, Plus } from 'lucide-react'
+import CreateJudgeForm from './CreateJudgeForm'
 
 interface JudgeSelectionProps {
   onJudgesSelected: (judges: Judge[]) => void
@@ -13,6 +14,8 @@ interface JudgeSelectionProps {
 
 export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: JudgeSelectionProps) {
   const [selectedJudges, setSelectedJudges] = useState<Judge[]>([])
+  const [availableJudges, setAvailableJudges] = useState<Judge[]>(JUDGES)
+  const [showCreateForm, setShowCreateForm] = useState(false)
 
   const toggleJudge = (judge: Judge) => {
     setSelectedJudges(prev => {
@@ -23,6 +26,11 @@ export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: Ju
       }
       return prev
     })
+  }
+
+  const handleJudgeCreated = (newJudge: Judge) => {
+    setAvailableJudges(prev => [...prev, newJudge])
+    setShowCreateForm(false)
   }
 
   const handleStart = () => {
@@ -120,6 +128,16 @@ export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: Ju
                 <Star className="w-6 h-6 text-cyan-400" />
                 <span className="text-cyan-300 font-semibold">Minimum 1 judge required</span>
               </div>
+              <div className="w-px h-8 bg-cyan-400/50"></div>
+              <motion.button
+                onClick={() => setShowCreateForm(true)}
+                className="flex items-center gap-3 bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 backdrop-blur-xl rounded-lg px-6 py-3 border border-cyan-400/30 transition-all duration-300 transform hover:scale-105"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Plus className="w-6 h-6 text-white" />
+                <span className="text-white font-semibold">Create Judge</span>
+              </motion.button>
             </motion.div>
           </motion.div>
 
@@ -129,7 +147,7 @@ export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: Ju
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.8, duration: 1 }}
         >
-          {JUDGES.map((judge, index) => {
+          {availableJudges.map((judge, index) => {
             const isSelected = selectedJudges.find(j => j.id === judge.id)
             return (
               <motion.div
@@ -245,6 +263,16 @@ export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: Ju
         </motion.div>
         </div>
       </div>
+
+      {/* Create Judge Form Modal */}
+      <AnimatePresence>
+        {showCreateForm && (
+          <CreateJudgeForm
+            onJudgeCreated={handleJudgeCreated}
+            onClose={() => setShowCreateForm(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

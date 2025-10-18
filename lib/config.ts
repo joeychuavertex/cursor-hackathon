@@ -113,3 +113,6 @@ export const JUDGES: Judge[] = [
 export const PRESENTATION_DURATION = 30 // seconds
 export const MAX_QUESTIONS_PER_JUDGE = 3
 export const SATISFACTION_THRESHOLD = 0.7
+
+// Backend API configuration
+export const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000'
