@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuthContext } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Judge } from '@/types/judge'
@@ -19,7 +19,7 @@ export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: Ju
   const { judges, loading, error, refetch } = useJudges()
   const [showAuthModal, setShowAuthModal] = useState(false)
 
-  const { user, loading: pageloading, signIn, signUp, resetPassword } = useAuth()
+  const { user, loading: pageloading, signIn, signUp, resetPassword } = useAuthContext()
   const [conversationId, setConversationId] = useState<string | null>(null)
 
   const toggleJudge = (judge: Judge) => {
