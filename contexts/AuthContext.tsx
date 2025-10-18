@@ -9,6 +9,7 @@ interface AuthContextType extends AuthState {
   signIn: (email: string, password: string) => Promise<{ data: any; error: string | null }>
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<{ error: string | null }>
+  error: string | null
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
