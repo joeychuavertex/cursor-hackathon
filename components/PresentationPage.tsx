@@ -108,43 +108,63 @@ export default function PresentationPage({ judges, onBackToSelection }: Presenta
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-purple-900 flex flex-col">
+    <div className="min-h-screen bg-black relative overflow-hidden">
+      {/* Theatrical Background Elements */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-black via-gray-900 to-black"></div>
+        {/* Floating particles */}
+        {Array.from({ length: 30 }, (_, i) => (
+          <div
+            key={i}
+            className="absolute w-1 h-1 bg-yellow-400 rounded-full opacity-30"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animation: `float ${3 + Math.random() * 2}s infinite ease-in-out`,
+              animationDelay: `${Math.random() * 2}s`,
+            }}
+          />
+        ))}
+      </div>
+
       {/* Header */}
-      <div className="flex justify-between items-center p-6 bg-black/20 backdrop-blur-lg">
+      <div className="relative z-10 flex justify-between items-center p-6 bg-black/40 backdrop-blur-xl border-b border-yellow-400/20">
         <button
           onClick={onBackToSelection}
-          className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+          className="px-6 py-3 bg-gray-800/80 hover:bg-gray-700/80 text-white rounded-lg transition-all duration-300 border border-gray-600/50 hover:border-yellow-400/50 hover:shadow-lg hover:shadow-yellow-400/20"
         >
           ← Back to Selection
         </button>
         
-        <h1 className="text-2xl font-bold text-white">Shark Tank Presentation</h1>
+        <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-500 drop-shadow-2xl">
+          🦈 SHARK TANK PRESENTATION
+        </h1>
         
         {/* Timer */}
-        <div className="bg-black/70 backdrop-blur-lg rounded-2xl px-6 py-4 text-white">
-          <div className="text-sm text-gray-300 mb-1">Time Remaining</div>
-          <div className="text-4xl font-bold text-yellow-400">
+        <div className="bg-black/80 backdrop-blur-xl rounded-2xl px-8 py-6 text-white border border-yellow-400/30 shadow-2xl shadow-yellow-400/20">
+          <div className="text-sm text-cyan-300 mb-2 font-semibold tracking-wider">TIME REMAINING</div>
+          <div className="text-5xl font-black text-yellow-400 drop-shadow-lg">
             {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center justify-center p-8">
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-8">
         {/* Judges Panel */}
         <div className="mb-12">
-          <h2 className="text-3xl font-bold text-white text-center mb-8">
-            The Sharks Are Watching
+          <h2 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-500 text-center mb-8 drop-shadow-2xl">
+            THE SHARKS ARE WATCHING
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl">
             {judges.map((judge) => (
-              <div key={judge.id} className="relative">
-                <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
+              <div key={judge.id} className="relative group">
+                <div className="bg-black/60 backdrop-blur-xl rounded-2xl p-6 border border-yellow-400/30 shadow-2xl shadow-yellow-400/10 hover:shadow-yellow-400/20 transition-all duration-300 hover:scale-105">
                   {/* Avatar Container */}
                   <div className="relative mb-4">
                     {judge.isHeyGenAvatar ? (
-                      <div className="aspect-video bg-black/50 rounded-xl overflow-hidden border-2 border-yellow-400">
+                      <div className="aspect-video bg-black/80 rounded-xl overflow-hidden border-2 border-yellow-400 shadow-lg shadow-yellow-400/20">
                         {stream ? (
                           <video
                             ref={videoRef}
@@ -156,16 +176,16 @@ export default function PresentationPage({ judges, onBackToSelection }: Presenta
                         ) : (
                           <div className="w-full h-full flex flex-col items-center justify-center">
                             <div className="w-12 h-12 border-4 border-yellow-400/30 border-t-yellow-400 rounded-full animate-spin mb-4"></div>
-                            <div className="text-yellow-400 font-semibold">Loading Avatar...</div>
-                            <div className="text-white/70 text-sm mt-2">Connecting to HeyGen</div>
+                            <div className="text-yellow-400 font-bold text-lg">Loading Avatar...</div>
+                            <div className="text-cyan-300 text-sm mt-2 font-semibold">Connecting to HeyGen</div>
                           </div>
                         )}
                       </div>
                     ) : (
-                      <div className="aspect-video bg-gradient-to-br from-gray-600 to-gray-800 rounded-xl flex items-center justify-center border-2 border-gray-400">
+                      <div className="aspect-video bg-gradient-to-br from-gray-800 to-black rounded-xl flex items-center justify-center border-2 border-yellow-400/50 shadow-lg shadow-yellow-400/10">
                         <div className="text-center">
-                          <div className="text-4xl mb-2">👤</div>
-                          <div className="text-white/70 text-sm">3D Avatar</div>
+                          <div className="text-5xl mb-2">🦈</div>
+                          <div className="text-yellow-400 font-bold text-sm">3D Avatar</div>
                         </div>
                       </div>
                     )}
@@ -173,24 +193,26 @@ export default function PresentationPage({ judges, onBackToSelection }: Presenta
                   
                   {/* Judge Info */}
                   <div className="text-center">
-                    <h3 className="text-xl font-bold text-white mb-2">{judge.name}</h3>
-                    <div className="text-sm text-blue-200 mb-2">
+                    <h3 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-300 mb-3 drop-shadow-lg">
+                      {judge.name}
+                    </h3>
+                    <div className="text-sm text-cyan-300 mb-3 font-semibold tracking-wide">
                       {judge.expertise.join(' • ')}
                     </div>
                     
                     {/* Connection Status */}
                     {judge.isHeyGenAvatar && (
-                      <div className="flex items-center justify-center gap-2 text-sm">
-                        <div className={`w-2 h-2 rounded-full ${stream ? 'bg-green-400' : 'bg-yellow-400'}`}></div>
-                        <span className={stream ? 'text-green-400' : 'text-yellow-400'}>
-                          {stream ? 'Connected' : 'Connecting...'}
+                      <div className="flex items-center justify-center gap-2 text-sm mb-2">
+                        <div className={`w-3 h-3 rounded-full ${stream ? 'bg-green-400 shadow-lg shadow-green-400/50' : 'bg-yellow-400 shadow-lg shadow-yellow-400/50'} animate-pulse`}></div>
+                        <span className={`font-bold ${stream ? 'text-green-400' : 'text-yellow-400'}`}>
+                          {stream ? 'CONNECTED' : 'CONNECTING...'}
                         </span>
                       </div>
                     )}
                     
                     {/* HeyGen Avatar ID */}
                     {judge.heygenAvatarId && (
-                      <div className="text-xs text-white/50 mt-1">
+                      <div className="text-xs text-white/60 mt-2 font-mono bg-black/40 px-2 py-1 rounded">
                         ID: {judge.heygenAvatarId}
                       </div>
                     )}
@@ -203,27 +225,40 @@ export default function PresentationPage({ judges, onBackToSelection }: Presenta
 
         {/* Recording Controls */}
         <div className="w-full max-w-4xl">
-          <SpeechRecognition
-            onTextUpdate={setPresentationText}
-            onComplete={handlePresentationComplete}
-            isRecording={isRecording}
-            setIsRecording={setIsRecording}
-          />
+          <div className="bg-black/60 backdrop-blur-xl rounded-2xl p-8 border border-yellow-400/30 shadow-2xl shadow-yellow-400/10">
+            <SpeechRecognition
+              onTextUpdate={setPresentationText}
+              onComplete={handlePresentationComplete}
+              isRecording={isRecording}
+              setIsRecording={setIsRecording}
+            />
+          </div>
         </div>
 
         {/* Error Display */}
         {error && (
-          <div className="mt-6 p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-200">
-            <div className="font-semibold">HeyGen Error:</div>
-            <div className="text-sm">{error}</div>
+          <div className="mt-6 p-6 bg-red-500/20 border border-red-500/50 rounded-xl text-red-200 backdrop-blur-xl shadow-2xl">
+            <div className="font-bold text-lg mb-2">⚠️ HeyGen Error:</div>
+            <div className="text-sm font-mono">{error}</div>
           </div>
         )}
 
         {/* Debug Info */}
-        <div className="mt-6 p-4 bg-black/30 rounded-lg text-white/70 text-sm">
-          <div>HeyGen Status: {isLoading ? 'Loading...' : stream ? 'Connected' : 'Disconnected'}</div>
-          <div>Stream ID: {stream?.id || 'None'}</div>
-          <div>Current Phase: {currentPhase}</div>
+        <div className="mt-6 p-6 bg-black/60 backdrop-blur-xl rounded-xl text-white/70 text-sm border border-cyan-400/20 shadow-lg">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+            <div>
+              <div className="text-cyan-300 font-bold mb-1">HeyGen Status</div>
+              <div className="text-yellow-400">{isLoading ? 'Loading...' : stream ? 'Connected' : 'Disconnected'}</div>
+            </div>
+            <div>
+              <div className="text-cyan-300 font-bold mb-1">Stream ID</div>
+              <div className="text-yellow-400 font-mono text-xs">{stream?.id || 'None'}</div>
+            </div>
+            <div>
+              <div className="text-cyan-300 font-bold mb-1">Current Phase</div>
+              <div className="text-yellow-400 uppercase font-bold">{currentPhase}</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
