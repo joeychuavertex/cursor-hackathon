@@ -17,7 +17,7 @@ export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: Ju
   const [selectedJudges, setSelectedJudges] = useState<Judge[]>([])
   const { judges, loading, error, refetch } = useJudges()
 
-  const { user, pageloading } = useAuth()
+  const { user, loading: pageloading } = useAuth()
   const [conversationId, setConversationId] = useState<string | null>(null)
 
   const toggleJudge = (judge: Judge) => {
@@ -34,7 +34,7 @@ export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: Ju
   const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:8000'
 
   const handleStart = async () => {
-    if (pageloading) return
+    if (loading) return
     if (!user) {
       console.error('User not authenticated')
       return
