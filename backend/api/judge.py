@@ -1,6 +1,7 @@
 # api/judge_api/judges.py
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel, Field
+from supabase import create_client, Client
 from typing import List, Literal
 from openai import OpenAI
 import os
@@ -13,17 +14,39 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 router = APIRouter(prefix="/judges", tags=["Judges"])
 
 # Initialize client lazily
-def get_client() -> OpenAI:
+def get_openai_client() -> OpenAI:
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise RuntimeError("Missing OPENAI_API_KEY in environment.")
     return OpenAI(api_key=api_key)
+
+def get_supabase_client(user_token: str) -> Client:
+    url = os.getenv("SUPABASE_URL")
+    anon_key = os.getenv("SUPABASE_KEY")
+    client = create_client(url, anon_key)
+    client.postgrest.auth(user_token)
+    return client
 
 def load_personas() -> dict:
     """Load judge personas from the local JSON file."""
     path = os.path.join(os.path.dirname(__file__), "../placeholder/personas.json")
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
+
+def get_chat_history(supabase_session, conversation_id):
+    history_resp = (
+        supabase_session.table("messages")
+        .select("*")
+        .eq("conversation_id", conversation_id)
+        .order("created_at", desc=False)
+        .execute()
+    )
+
+def format_openai_messages(history):
+    messages = []
+    for msg in history:
+        messages.append({"role": msg["sender"], "content": msg["content"]})
+    return messages
 
 personas = load_personas()
 
@@ -46,10 +69,10 @@ class Message(BaseModel):
 class ConversationHistory(BaseModel):
     messages: List[Message] = []
 
-class MessageRequest(BaseModel):
-    judge: str
-    conversation_history: ConversationHistory
+class NewMessageRequest(BaseModel):
+    conversation_id: str
     new_message: str
+
 
 def get_judge_system_prompt(name: str) -> str:
     personas = load_personas()
@@ -66,27 +89,66 @@ def get_judge_system_prompt(name: str) -> str:
     Stay in character. Be direct, insightful, and occasionally use your catchphrases.
     """
 
+class SelectJudgeRequest(BaseModel):
+    judge: Literal["altman", "elon", "zuck"]
+
+class EndConversationRequest(BaseModel):
+    conversation_id: str
+
+# --- Endpoint 1: Select a judge and start conversation ---
+@router.post("/select")
+async def select_judge(request: SelectJudgeRequest, authorization: str = Header(...)):
+    token = authorization.replace("Bearer ", "")
+    supabase = get_supabase_client(token)    
+    user_id = supabase.auth.get_user()
+
+    # Validate judge
+    judge = request.judge.lower().strip()
+    allowed_judges = {"altman", "elon", "zuck"}
+    if judge not in allowed_judges:
+        raise HTTPException(status_code=400, detail=f"Invalid judge '{judge}'")
+
+    # Create new conversation
+    convo_resp = supabase.table("conversations").insert({
+        "user_id": user_id,
+    }).execute()
+    conversation_id = convo_resp.data[0]["id"]
+
+    # Insert the judge system prompt as the first message
+    system_prompt = get_judge_system_prompt(judge)
+    supabase.table("messages").insert({
+        "conversation_id": conversation_id,
+        "sender": "system",
+        "content": system_prompt
+    }).execute()
+
+    return {"conversation_id": conversation_id, "judge": judge}
+
 @router.post("/generate")
-async def generate_text(request: MessageRequest):
+async def generate_text(request: NewMessageRequest, authorization: str = Header(...)):
     """
     Endpoint for a judge persona to respond to a pitch, keeping conversational history.
     """
-    allowed_judges = {"altman", "elon", "zuck"}
-    judge = request.judge.lower().strip()
-    if judge not in allowed_judges:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid judge '{request.judge}'. Must be one of {', '.join(allowed_judges)}."
-        )
+    token = authorization.replace("Bearer ", "")
+    supabase = get_supabase_client(token)  
+    client = get_openai_client()
 
-    client = get_client()
+    # 🧠 Load existing conversation history
+    history_resp = get_chat_history(supabase, request.conversation_id)
+    history = history_resp.data or []
 
-    #placeholder
-    system_prompt = get_judge_system_prompt(judge)
+    if not history:
+        raise HTTPException(status_code=404, detail="Conversation not found or empty")
 
-    messages = [{"role": "system", "content": system_prompt}]
-    messages.extend(m.dict() for m in request.conversation_history.messages)
+    # 🧩 Convert history into OpenAI message format
+    messages = format_openai_messages(history)
     messages.append({"role": "user", "content": request.new_message})
+
+    supabase.table("messages").insert({
+        "conversation_id": request.conversation_id,
+        "sender": "user",
+        "content": request.new_message
+    }).execute()
 
     try:
         response = client.chat.completions.create(
@@ -94,8 +156,36 @@ async def generate_text(request: MessageRequest):
             messages=messages,
             temperature=0.8,
         )
+        reply = response.choices[0].message.content.strip()
+        # 💾 Save assistant reply
+        supabase.table("messages").insert({
+            "conversation_id": request.conversation_id,
+            "sender": "assistant",
+            "content": reply
+        }).execute()
+
         return {
             "judge_reply": response.choices[0].message.content.strip()
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating judge response: {e}")
+
+
+# --- Endpoint 3: End conversation and delete all messages ---
+@router.post("/end")
+async def end_conversation(request: EndConversationRequest, authorization: str = Header(...)):
+    token = authorization.replace("Bearer ", "")
+    supabase = get_supabase_client(token)  
+
+    try:
+
+        # 🗑️ Delete all messages
+        supabase.table("messages").delete().eq("conversation_id", request.conversation_id).execute()
+
+        # (Optional) Delete the conversation itself
+        # supabase.table("conversations").delete().eq("id", request.conversation_id).execute()
+
+        return {"message": "Conversation and messages deleted successfully."}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error ending conversation: {e}")
