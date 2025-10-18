@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import SpeechRecognition from './SpeechRecognition'
 import TranscriptionPanel, { TranscriptionEntry } from './TranscriptionPanel'
 import { useHeyGenAvatar } from '../hooks/useHeyGenAvatar'
+import { useJudgeResponse } from '../hooks/useJudgeResponse'
 import { Judge } from '../types/judge'
 
 interface PresentationPageProps {
@@ -35,6 +36,7 @@ export default function PresentationPage({ judges, onBackToSelection, onPresenta
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const transcriptionIdRef = useRef(0)
   const { startAvatar, stopAvatar, speak, stream, isLoading, error } = useHeyGenAvatar()
+  const { generateResponse, isGenerating, error: judgeError } = useJudgeResponse()
 
   // Helper functions for transcription management
   const addTranscription = (speaker: string, speakerType: 'user' | 'avatar', content: string, isFinal: boolean = true) => {
@@ -145,10 +147,42 @@ export default function PresentationPage({ judges, onBackToSelection, onPresenta
     }
   }, [stopAvatar])
 
-  const handlePresentationComplete = (text: string) => {
+  const handlePresentationComplete = async (text: string) => {
     setPresentationText(text)
     updateUserTranscription(text, true) // Mark as final
-    setCurrentPhase('questions')
+
+    // Send pitch to judges and get their responses
+    if (conversationId) {
+      try {
+        console.log('📤 Sending pitch to judges...', { conversationId, pitchLength: text.length })
+
+        // Generate response from the judge
+        const judgeReply = await generateResponse({
+          conversationId,
+          message: text
+        })
+
+        console.log('✅ Received judge response:', judgeReply)
+
+        // Add judge's response to transcription
+        const activeJudge = judges.find(j => j.isHeyGenAvatar) || judges[0]
+        addAvatarTranscription(activeJudge.name, judgeReply)
+
+        // If HeyGen avatar is active, make it speak the response
+        if (activeJudge.isHeyGenAvatar && speak) {
+          await speak(judgeReply)
+        }
+
+        setCurrentPhase('questions')
+      } catch (err) {
+        console.error('❌ Error getting judge response:', err)
+        // Continue to questions phase even if there's an error
+        setCurrentPhase('questions')
+      }
+    } else {
+      console.warn('⚠️ No conversation ID found, skipping judge response')
+      setCurrentPhase('questions')
+    }
   }
 
   const handlePresentationUpdate = (text: string) => {
@@ -300,9 +334,27 @@ export default function PresentationPage({ judges, onBackToSelection, onPresenta
             </div>
           )}
 
+          {/* Judge Response Error */}
+          {judgeError && (
+            <div className="mt-4 p-6 bg-red-500/20 border border-red-500/50 rounded-xl text-red-200 backdrop-blur-xl shadow-2xl">
+              <div className="font-bold text-lg mb-2">⚠️ Judge Response Error:</div>
+              <div className="text-sm font-mono">{judgeError}</div>
+            </div>
+          )}
+
+          {/* Loading Indicator */}
+          {isGenerating && (
+            <div className="mt-4 p-6 bg-yellow-500/20 border border-yellow-500/50 rounded-xl text-yellow-200 backdrop-blur-xl shadow-2xl">
+              <div className="flex items-center justify-center gap-3">
+                <div className="w-6 h-6 border-4 border-yellow-400/30 border-t-yellow-400 rounded-full animate-spin"></div>
+                <div className="font-bold text-lg">Judge is thinking...</div>
+              </div>
+            </div>
+          )}
+
           {/* Debug Info */}
           <div className="mt-4 p-6 bg-black/60 backdrop-blur-xl rounded-xl text-white/70 text-sm border border-cyan-400/20 shadow-lg">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
               <div>
                 <div className="text-cyan-300 font-bold mb-1">HeyGen Status</div>
                 <div className="text-yellow-400">{isLoading ? 'Loading...' : stream ? 'Connected' : 'Disconnected'}</div>
@@ -314,6 +366,12 @@ export default function PresentationPage({ judges, onBackToSelection, onPresenta
               <div>
                 <div className="text-cyan-300 font-bold mb-1">Current Phase</div>
                 <div className="text-yellow-400 uppercase font-bold">{currentPhase}</div>
+              </div>
+              <div>
+                <div className="text-cyan-300 font-bold mb-1">Conversation ID</div>
+                <div className={`font-mono text-xs ${conversationId ? 'text-green-400' : 'text-red-400'}`}>
+                  {conversationId ? `${conversationId.substring(0, 8)}...` : 'Not Set!'}
+                </div>
               </div>
             </div>
           </div>
