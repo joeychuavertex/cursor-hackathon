@@ -5,13 +5,12 @@ export async function GET(request: NextRequest) {
     // Get the backend URL from environment variables
     const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000'
     
-    // Fetch judges from the backend using the /select endpoint without a specific judge
-    const response = await fetch(`${backendUrl}/judges/select`, {
-      method: 'POST',
+    // Fetch judges from the backend using the /get_judges endpoint without a specific judge
+    const response = await fetch(`${backendUrl}/judges/get_judges`, {
+      method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({}), // Empty body to get the list of judges
     })
 
     if (!response.ok) {
