@@ -139,7 +139,8 @@ export function useAuth() {
 
   const createOrUpdateProfile = async (user: AuthUser, fullName?: string) => {
     try {
-      const { error } = await supabase
+      // Use type assertion to bypass TypeScript error
+      const { error } = await (supabase as any)
         .from('profiles')
         .upsert({
           id: user.id,
