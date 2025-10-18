@@ -1,14 +1,19 @@
 # api/judge_api/judges.py
 from fastapi import APIRouter, HTTPException, Header
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from supabase import create_client, Client
 from typing import List, Literal
 from openai import OpenAI
 import os
 import json
+from pathlib import Path
 from dotenv import load_dotenv
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from services.elevenlabs_service import text_to_speech_base64
 
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "../.env.local"))
+load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 router = APIRouter(prefix="/judges", tags=["Judges"])
@@ -111,6 +116,7 @@ async def select_judge(request: SelectJudgeRequest, authorization: str = Header(
     # Create new conversation
     convo_resp = supabase.table("conversations").insert({
         "user_id": user_id,
+        "judge_name": judge
     }).execute()
     conversation_id = convo_resp.data[0]["id"]
 
@@ -128,9 +134,10 @@ async def select_judge(request: SelectJudgeRequest, authorization: str = Header(
 async def generate_text(request: NewMessageRequest, authorization: str = Header(...)):
     """
     Endpoint for a judge persona to respond to a pitch, keeping conversational history.
+    Returns both text and audio URL.
     """
     token = authorization.replace("Bearer ", "")
-    supabase = get_supabase_client(token)  
+    supabase = get_supabase_client(token)
     client = get_openai_client()
 
     # 🧠 Load existing conversation history
@@ -139,6 +146,12 @@ async def generate_text(request: NewMessageRequest, authorization: str = Header(
 
     if not history:
         raise HTTPException(status_code=404, detail="Conversation not found or empty")
+
+    # 🔍 Get the judge name from the conversation
+    convo_resp = supabase.table("conversations").select("judge_name").eq("id", request.conversation_id).execute()
+    if not convo_resp.data:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    judge_name = convo_resp.data[0].get("judge_name", "altman")
 
     # 🧩 Convert history into OpenAI message format
     messages = format_openai_messages(history)
@@ -157,6 +170,14 @@ async def generate_text(request: NewMessageRequest, authorization: str = Header(
             temperature=0.8,
         )
         reply = response.choices[0].message.content.strip()
+
+        # 🎙️ Convert text to speech using ElevenLabs (no file storage)
+        try:
+            audio_base64 = text_to_speech_base64(reply, judge_name)
+        except Exception as audio_error:
+            print(f"Warning: Failed to generate audio: {audio_error}")
+            audio_base64 = None
+
         # 💾 Save assistant reply
         supabase.table("messages").insert({
             "conversation_id": request.conversation_id,
@@ -165,17 +186,37 @@ async def generate_text(request: NewMessageRequest, authorization: str = Header(
         }).execute()
 
         return {
-            "judge_reply": response.choices[0].message.content.strip()
+            "judge_reply": reply,
+            "audio_base64": audio_base64
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating judge response: {e}")
 
 
-# --- Endpoint 3: End conversation and delete all messages ---
+# --- Endpoint 3: Serve audio files ---
+@router.get("/audio/{filename}")
+async def get_audio(filename: str):
+    """
+    Serve generated audio files.
+    """
+    audio_dir = Path(__file__).parent.parent / "audio_files"
+    audio_path = audio_dir / filename
+
+    if not audio_path.exists():
+        raise HTTPException(status_code=404, detail="Audio file not found")
+
+    return FileResponse(
+        path=str(audio_path),
+        media_type="audio/mpeg",
+        filename=filename
+    )
+
+
+# --- Endpoint 4: End conversation and delete all messages ---
 @router.post("/end")
 async def end_conversation(request: EndConversationRequest, authorization: str = Header(...)):
     token = authorization.replace("Bearer ", "")
-    supabase = get_supabase_client(token)  
+    supabase = get_supabase_client(token)
 
     try:
 
