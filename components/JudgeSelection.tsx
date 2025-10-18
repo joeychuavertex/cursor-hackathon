@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { useAuth } from '@/hooks/useAuth'
+import { supabase } from '@/lib/supabase'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Judge } from '@/types/judge'
 import { useJudges } from '@/hooks/useJudges'
@@ -15,6 +17,9 @@ export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: Ju
   const [selectedJudges, setSelectedJudges] = useState<Judge[]>([])
   const { judges, loading, error, refetch } = useJudges()
 
+  const { user, loading: pageloading } = useAuth()
+  const [conversationId, setConversationId] = useState<string | null>(null)
+
   const toggleJudge = (judge: Judge) => {
     setSelectedJudges(prev => {
       if (prev.find(j => j.id === judge.id)) {
@@ -26,8 +31,59 @@ export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: Ju
     })
   }
 
-  const handleStart = () => {
-    if (selectedJudges.length >= 1) {
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000'
+
+  const handleStart = async () => {
+    if (loading) return
+    if (!user) {
+      console.error('User not authenticated')
+      return
+    }
+
+    if (selectedJudges.length == 1) {
+
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession()
+
+      if (error || !session) {
+        console.error('Unable to get session:', error)
+        return
+      }
+
+      const accessToken = session.access_token
+
+      const selectedJudge = selectedJudges[0].id
+      console.log(selectedJudge)
+      const response = await fetch(`${backendUrl}/judges/select`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ judge : selectedJudge }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to send selected judges.')
+      }
+
+      const data = await response.json()
+      const conversationId = data.conversation_id
+
+      if (conversationId) {
+        // Store in localStorage (or another storage mechanism)
+        localStorage.setItem('conversationId', conversationId)
+        console.log('Conversation ID stored:', conversationId)
+
+        // Continue your logic
+        onJudgesSelected(selectedJudges)
+      } else {
+        console.error('Conversation ID missing from response:', data)
+      }
+      console.log('Judges successfully sent:', data)
+
       onJudgesSelected(selectedJudges)
     }
   }
@@ -249,14 +305,14 @@ export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: Ju
             onClick={handleStart}
             disabled={selectedJudges.length < 1}
             className={`px-16 py-6 text-2xl font-bold rounded-2xl transition-all duration-300 flex items-center gap-4 mx-auto ${
-              selectedJudges.length >= 1
+              selectedJudges.length == 1
                 ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400 transform hover:scale-105 shadow-2xl shadow-yellow-400/50 border-2 border-yellow-300'
                 : 'bg-gray-600 text-gray-400 cursor-not-allowed border-2 border-gray-500'
             }`}
-            whileHover={selectedJudges.length >= 1 ? { scale: 1.05 } : {}}
-            whileTap={selectedJudges.length >= 1 ? { scale: 0.95 } : {}}
+            whileHover={selectedJudges.length == 1 ? { scale: 1.05 } : {}}
+            whileTap={selectedJudges.length == 1 ? { scale: 0.95 } : {}}
           >
-            {selectedJudges.length >= 1 ? (
+            {selectedJudges.length == 1 ? (
               <>
                 <Zap className="w-6 h-6" />
                 <span>ENTER THE TANK WITH {selectedJudges.length} JUDGE{selectedJudges.length > 1 ? 'S' : ''}!</span>
@@ -271,7 +327,7 @@ export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: Ju
             )}
           </motion.button>
           
-          {selectedJudges.length >= 1 && (
+          {selectedJudges.length == 1 && (
             <motion.p
               className="mt-6 text-lg text-cyan-300 font-medium"
               initial={{ opacity: 0 }}
