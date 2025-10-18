@@ -14,6 +14,7 @@
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.15.19",
     "@supabase/supabase-js": "^2.38.5",
+    "@heygen/streaming-avatar": "^1.0.0",
     "autoprefixer": "^10.4.16",
     "elevenlabs": "^1.59.0",
     "framer-motion": "^10.16.16",
