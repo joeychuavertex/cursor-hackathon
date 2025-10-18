@@ -37,7 +37,7 @@ export function useHeyGenAvatar(): UseHeyGenAvatarReturn {
 
     try {
       // Get access token from Python FastAPI backend
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000'
       const tokenResponse = await fetch(`${backendUrl}/heygen/token`, {
         method: 'POST',
       })

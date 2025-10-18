@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function GET(request: NextRequest) {
   try {
     // Get the backend URL from environment variables
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000'
+    const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:8000'
     
     // Fetch judges from the backend using the /get_judges endpoint without a specific judge
     const response = await fetch(`${backendUrl}/judges/get_judges`, {

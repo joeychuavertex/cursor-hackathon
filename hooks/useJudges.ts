@@ -8,7 +8,7 @@ interface UseJudgesReturn {
   refetch: () => void
 }
 
-const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'
+const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000'
 
 export function useJudges(): UseJudgesReturn {
   const [judges, setJudges] = useState<Judge[]>([])
