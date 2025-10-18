@@ -6,7 +6,8 @@ import { supabase } from '@/lib/supabase'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Judge } from '@/types/judge'
 import { useJudges } from '@/hooks/useJudges'
-import { Check, Users, Star, Brain, DollarSign, ArrowLeft, Crown, Zap, Loader2, AlertCircle } from 'lucide-react'
+import { Check, Users, Star, Brain, DollarSign, ArrowLeft, Crown, Zap, Loader2, AlertCircle, LogIn } from 'lucide-react'
+import AuthModal from './AuthModal'
 
 interface JudgeSelectionProps {
   onJudgesSelected: (judges: Judge[]) => void
@@ -16,8 +17,9 @@ interface JudgeSelectionProps {
 export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: JudgeSelectionProps) {
   const [selectedJudges, setSelectedJudges] = useState<Judge[]>([])
   const { judges, loading, error, refetch } = useJudges()
+  const [showAuthModal, setShowAuthModal] = useState(false)
 
-  const { user, loading: pageloading } = useAuth()
+  const { user, loading: pageloading, signIn, signUp, resetPassword } = useAuth()
   const [conversationId, setConversationId] = useState<string | null>(null)
 
   const toggleJudge = (judge: Judge) => {
@@ -33,58 +35,128 @@ export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: Ju
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000'
 
+  // Utility function to get access token from localStorage
+  const getAccessTokenFromStorage = () => {
+    // Check all possible localStorage keys for Supabase session
+    const possibleKeys = [
+      'supabase.auth.token',
+      'supabase.auth.session',
+      'sb-auth-token'
+    ]
+
+    for (const key of possibleKeys) {
+      const stored = localStorage.getItem(key)
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored)
+          if (parsed.access_token) {
+            console.log(`Found token in localStorage key: ${key}`)
+            return parsed.access_token
+          }
+        } catch (e) {
+          console.log(`Failed to parse localStorage key: ${key}`, e)
+        }
+      }
+    }
+
+    // Check for any key that contains 'supabase' and 'auth'
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key && key.includes('supabase') && key.includes('auth')) {
+        const stored = localStorage.getItem(key)
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored)
+            if (parsed.access_token) {
+              console.log(`Found token in localStorage key: ${key}`)
+              return parsed.access_token
+            }
+          } catch (e) {
+            console.log(`Failed to parse localStorage key: ${key}`, e)
+          }
+        }
+      }
+    }
+
+    return null
+  }
+
   const handleStart = async () => {
+    console.log('handleStart called - loading:', loading, 'user:', user)
     if (loading) return
     if (!user) {
-      console.error('User not authenticated')
+      console.error('User not authenticated - user:', user)
+      alert('Please sign in first to select judges')
       return
     }
 
     if (selectedJudges.length == 1) {
+      try {
+        // Try to get session from Supabase first
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession()
 
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession()
+        console.log('Session from Supabase:', { session, error })
 
-      if (error || !session) {
-        console.error('Unable to get session:', error)
-        return
+        let accessToken = null
+
+        if (session && session.access_token) {
+          accessToken = session.access_token
+          console.log('Using token from Supabase session')
+        } else {
+          // Fallback: try to get token from localStorage
+          console.log('No session from Supabase, checking localStorage...')
+          accessToken = getAccessTokenFromStorage()
+        }
+
+        if (!accessToken) {
+          console.error('No access token found in session or localStorage')
+          console.log('Available localStorage keys:', Object.keys(localStorage))
+          alert('Authentication token not found. Please sign in again.')
+          return
+        }
+
+        const selectedJudge = selectedJudges[0].id
+        console.log('Selected judge:', selectedJudge)
+        
+        const response = await fetch(`${backendUrl}/judges/select`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ judge : selectedJudge }),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          console.error('Failed to select judge:', response.status, errorData)
+          throw new Error(`Failed to select judge: ${errorData.detail || response.statusText}`)
+        }
+
+        const data = await response.json()
+        const conversationId = data.conversation_id
+
+        if (conversationId) {
+          // Store in localStorage (or another storage mechanism)
+          localStorage.setItem('conversationId', conversationId)
+          console.log('Conversation ID stored:', conversationId)
+
+          // Continue your logic
+          onJudgesSelected(selectedJudges)
+        } else {
+          console.error('Conversation ID missing from response:', data)
+          throw new Error('No conversation ID returned from server')
+        }
+        console.log('Judges successfully sent:', data)
+
+      } catch (error) {
+        console.error('Error selecting judge:', error)
+        // You might want to show an error message to the user here
+        alert(`Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`)
       }
-
-      const accessToken = session.access_token
-
-      const selectedJudge = selectedJudges[0].id
-      console.log(selectedJudge)
-      const response = await fetch(`${backendUrl}/judges/select`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({ judge : selectedJudge }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to send selected judges.')
-      }
-
-      const data = await response.json()
-      const conversationId = data.conversation_id
-
-      if (conversationId) {
-        // Store in localStorage (or another storage mechanism)
-        localStorage.setItem('conversationId', conversationId)
-        console.log('Conversation ID stored:', conversationId)
-
-        // Continue your logic
-        onJudgesSelected(selectedJudges)
-      } else {
-        console.error('Conversation ID missing from response:', data)
-      }
-      console.log('Judges successfully sent:', data)
-
-      onJudgesSelected(selectedJudges)
     }
   }
 
@@ -161,6 +233,37 @@ export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: Ju
             >
               CHOOSE YOUR JUDGES
             </motion.p>
+            
+            {/* Debug info */}
+            <motion.div 
+              className="text-sm text-yellow-300 mb-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.2, duration: 1 }}
+            >
+              {user ? (
+                <div className="space-y-2">
+                  <div>✅ Authenticated as: {user.email}</div>
+                  <div className="text-xs text-cyan-300">
+                    Token available: {getAccessTokenFromStorage() ? '✅ Yes' : '❌ No'}
+                  </div>
+                  <div className="text-xs text-cyan-300">
+                    localStorage keys: {Object.keys(localStorage).filter(k => k.includes('supabase')).length} supabase keys
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-4">
+                  <span>❌ Not authenticated - Please sign in first</span>
+                  <button
+                    onClick={() => setShowAuthModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-yellow-400 text-black rounded-lg hover:bg-yellow-300 transition-colors"
+                  >
+                    <LogIn className="w-4 h-4" />
+                    Sign In
+                  </button>
+                </div>
+              )}
+            </motion.div>
             
             <motion.div 
               className="flex items-center justify-center gap-8 text-lg"
@@ -340,6 +443,13 @@ export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: Ju
         </motion.div>
         </div>
       </div>
+      
+      {/* Auth Modal */}
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => setShowAuthModal(false)}
+        defaultMode="signin"
+      />
     </div>
   )
 }

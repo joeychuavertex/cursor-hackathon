@@ -4,7 +4,7 @@ from supabase import create_client, Client
 
 from dotenv import load_dotenv
 
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "../.env.local"))
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "../../.env.local"))
 
 url = os.environ.get("SUPABASE_URL") 
 key = os.environ.get("SUPABASE_KEY")

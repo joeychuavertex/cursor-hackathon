@@ -9,7 +9,7 @@ import json
 import time
 from dotenv import load_dotenv
 
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "../.env.local"))
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "../../.env.local"))
 
 router = APIRouter(prefix="/judges", tags=["Judges"])
 
@@ -27,7 +27,9 @@ def get_supabase_client(user_token: str) -> Client:
     if not url or not anon_key:
         raise RuntimeError("Missing Supabase configuration. Please set SUPABASE_URL and SUPABASE_KEY or NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY")
     
+    # Create client with anon key - we'll verify the user token separately
     client = create_client(url, anon_key)
+    
     return client
 
 def load_personas() -> dict:
@@ -162,7 +164,7 @@ async def select_judge(request: SelectJudgeRequest, authorization: str = Header(
     token = authorization.replace("Bearer ", "")
     
     try:
-        # Initialize Supabase client with user token
+        # Initialize Supabase client
         supabase = get_supabase_client(token)
         
         # Verify user authentication using the token directly
@@ -217,6 +219,11 @@ async def generate_text(request: NewMessageRequest, authorization: str = Header(
     token = authorization.replace("Bearer ", "")
     supabase = get_supabase_client(token)  
     client = get_openai_client()
+    
+    # Verify user authentication
+    user_response = supabase.auth.get_user(token)
+    if not user_response or not user_response.user:
+        raise HTTPException(status_code=401, detail="Invalid or expired authentication token")
 
     # 🧠 Load existing conversation history
     history_resp = get_chat_history(supabase, request.conversation_id)
@@ -261,6 +268,11 @@ async def generate_text(request: NewMessageRequest, authorization: str = Header(
 async def end_conversation(request: EndConversationRequest, authorization: str = Header(...)):
     token = authorization.replace("Bearer ", "")
     supabase = get_supabase_client(token)  
+    
+    # Verify user authentication
+    user_response = supabase.auth.get_user(token)
+    if not user_response or not user_response.user:
+        raise HTTPException(status_code=401, detail="Invalid or expired authentication token")
 
     try:
 

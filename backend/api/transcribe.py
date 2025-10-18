@@ -8,7 +8,7 @@ import tempfile
 from pathlib import Path
 import asyncio
 
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "../.env.local"))
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "../../.env.local"))
 
 router = APIRouter(prefix="/elevenlabs", tags=["Transcribe"])
 
@@ -149,6 +149,11 @@ async def transcribe_and_generate(
                 token = authorization.replace("Bearer ", "")
                 supabase = get_supabase_client(token)
                 openai_client = get_openai_client()
+                
+                # Verify user authentication
+                user_response = supabase.auth.get_user(token)
+                if not user_response or not user_response.user:
+                    raise HTTPException(status_code=401, detail="Invalid or expired authentication token")
                 
                 # Load conversation history
                 history_resp = get_chat_history(supabase, conversation_id)
