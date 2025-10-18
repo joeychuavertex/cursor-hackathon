@@ -208,9 +208,6 @@ export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: Ju
                     <div className="space-y-3">
                       <div className="flex items-center gap-3 text-sm text-cyan-200">
                         <Brain className="w-4 h-4 text-cyan-400" />
-                        <span className="font-medium">Focus: {judge.scoringCriteria.financials > 0.3 ? 'Financials' : 
-                                     judge.scoringCriteria.innovation > 0.3 ? 'Innovation' : 
-                                     judge.scoringCriteria.marketPotential > 0.3 ? 'Market' : 'Team'}</span>
                       </div>
                       <div className="flex items-center gap-3 text-sm text-cyan-200">
                         <DollarSign className="w-4 h-4 text-yellow-400" />
