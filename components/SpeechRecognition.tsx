@@ -120,6 +120,7 @@ export default function SpeechRecognition({
     // Fallback to webkit transcript or written text
     if (transcript.trim()) {
       onComplete(transcript)
+      setTranscript('')
     }
   }
 

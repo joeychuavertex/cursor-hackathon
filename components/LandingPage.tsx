@@ -177,9 +177,11 @@ function TheatricalDoor({ onClick, isHovered }: { onClick: () => void; isHovered
         onClick={onClick}
         onPointerOver={(e) => {
           e.stopPropagation()
+          document.body.style.cursor = 'pointer'
         }}
         onPointerOut={(e) => {
           e.stopPropagation()
+          document.body.style.cursor = 'default'
         }}
       >
         <boxGeometry args={[5.5, 7.5, 0.3]} />

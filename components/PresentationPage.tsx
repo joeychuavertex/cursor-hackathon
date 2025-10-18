@@ -18,7 +18,7 @@ export default function PresentationPage({ judges, onBackToSelection, onPresenta
   const [presentationText, setPresentationText] = useState('')
   const [isRecording, setIsRecording] = useState(false)
   const [currentPhase, setCurrentPhase] = useState<'presentation' | 'questions' | 'scoring' | 'results'>('presentation')
-  const conversationId = localStorage.getItem('conversationId')
+  const judgeConversationMap = localStorage.getItem('judgeConversationMap')
   const [transcriptions, setTranscriptions] = useState<TranscriptionEntry[]>([
     {
       id: 'mock-1',
@@ -177,6 +177,12 @@ export default function PresentationPage({ judges, onBackToSelection, onPresenta
     setPresentationText(text)
     updateUserTranscription(text, true) // Mark as final
 
+    // get a random conversation id from the judgeConversationMap
+    const map = JSON.parse(judgeConversationMap || '[]');
+    const conversationId = map.length ? map[Math.floor(Math.random() * map.length)].conversation_id : undefined;
+    // corresponds to the judge_id in the judgeConversationMap by using the conversation id
+    const judgeId = map.length ? map.find((item: { conversation_id: string, judge_id: string }) => item.conversation_id === conversationId)?.judge_id : undefined;
+
     // Send pitch to judges and get their responses
     if (conversationId) {
       try {
@@ -194,7 +200,7 @@ export default function PresentationPage({ judges, onBackToSelection, onPresenta
 
         // Add judge's response to transcription
         const activeJudge = judges.find(j => j.isHeyGenAvatar) || judges[0]
-        addAvatarTranscription(activeJudge.name, judgeReply)
+        addAvatarTranscription(judgeId, judgeReply)
 
         // Play audio based on judge type
         if (activeJudge.isHeyGenAvatar && speak) {
