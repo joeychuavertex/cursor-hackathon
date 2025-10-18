@@ -79,6 +79,8 @@ class NewMessageRequest(BaseModel):
     conversation_id: str
     new_message: str
 
+class GetScoreRequest(BaseModel):
+    conversation_id: str
 
 def get_judge_system_prompt(name: str) -> str:
     personas = load_personas()
@@ -100,6 +102,34 @@ class SelectJudgeRequest(BaseModel):
 
 class EndConversationRequest(BaseModel):
     conversation_id: str
+
+from pydantic import BaseModel, Field
+
+class InvestmentMemo(BaseModel):
+    recommendation: str = Field(..., description="Investment recommendation summary and rationale.")
+    summary: str = Field(..., description="Brief overview of the investment opportunity.")
+    valueProposition: str = Field(..., description="Description of what makes the product or service unique.")
+    market: str = Field(..., description="Market size, segment, and opportunity details.")
+    product: str = Field(..., description="Overview of the product, its features, and technology.")
+    metrics: str = Field(..., description="Performance and traction metrics, formatted with bullet points if needed.")
+    risks: str = Field(..., description="Key risks and challenges associated with the investment.")
+    team: str = Field(..., description="Information about the founding or executive team.")
+    deal: str = Field(..., description="Deal terms, valuation, and funding details.")
+    scenarioAnalysis: str = Field(..., description="Revenue projections or scenarios (conservative, base, optimistic).")
+    conclusion: str = Field(..., description="Final investment conclusion and outlook.")
+
+class PresentationMetrics(BaseModel):
+    clarity: float = Field(..., description="How clear the presentation is, on a scale from 0–10.")
+    confidence: float = Field(..., description="Perceived confidence of the presenter, 0–10.")
+    engagement: float = Field(..., description="Audience engagement level, 0–10.")
+    structure: float = Field(..., description="Organization and flow of content, 0–10.")
+    delivery: float = Field(..., description="Effectiveness of delivery and communication, 0–10.")
+    overall: float = Field(..., description="Overall presentation quality, 0–10.")
+
+class InvestmentMemoOutput(BaseModel):
+    memo: InvestmentMemo
+    metrics: PresentationMetrics
+
 
 @router.get("/get_judges")
 async def get_judges():
@@ -286,3 +316,40 @@ async def end_conversation(request: EndConversationRequest, authorization: str =
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error ending conversation: {e}")
+
+
+@router.post("/get_score")
+async def end_conversation(request: GetScoreRequest, authorization: str = Header(...)):
+    token = authorization.replace("Bearer ", "")
+    supabase = get_supabase_client(token)  
+    client = get_openai_client()
+
+    # 🧠 Load existing conversation history
+    history_resp = get_chat_history(supabase, request.conversation_id)
+    history = history_resp.data or []
+
+    if not history:
+        raise HTTPException(status_code=404, detail="Conversation not found or empty")
+
+
+    instructions: str = "Now given all of the above chat history, i want you to give a comprehensive overview of how well this pitch preformed using the given structure"
+
+    # 🧩 Convert history into OpenAI message format
+    messages = format_openai_messages(history)
+    messages.append({"role": "user", "content": instructions})
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=messages,
+            temperature=0.8,
+            response_format=InvestmentMemoOutput,
+        )
+        reply = response.choices[0].message.content.strip()
+
+        return {
+            "memo": reply.memo,
+            "metrics": reply.metrics
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating judge response: {e}")
