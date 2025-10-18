@@ -230,7 +230,7 @@ export default function PresentationPage({ judges, onBackToSelection }: Presenta
         </button>
         
         <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-500 drop-shadow-2xl">
-          🦈 SHARK TANK PRESENTATION
+          🦈 THE SHARKS ARE WATCHING
         </h1>
         
         {/* Timer */}
@@ -245,13 +245,9 @@ export default function PresentationPage({ judges, onBackToSelection }: Presenta
       {/* Main Content */}
       <div className="relative z-10 flex-1 flex p-8 gap-6">
         {/* Left Panel - Main Content */}
-        <div className="flex-1 flex flex-col items-center justify-center">
+        <div className="flex-1 flex flex-col items-center">
         {/* Judges Panel */}
-        <div className="mb-12">
-          <h2 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-500 text-center mb-8 drop-shadow-2xl">
-            THE SHARKS ARE WATCHING
-          </h2>
-          
+        <div className="mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl">
             {judges.map((judge) => (
               <div key={judge.id} className="relative group">
@@ -319,7 +315,7 @@ export default function PresentationPage({ judges, onBackToSelection }: Presenta
         </div>
 
         {/* Recording Controls */}
-        <div className="w-full max-w-4xl">
+        <div className="w-full max-w-4xl mt-6">
           <div className="bg-black/60 backdrop-blur-xl rounded-2xl p-8 border border-yellow-400/30 shadow-2xl shadow-yellow-400/10">
             <SpeechRecognition
               onTextUpdate={handlePresentationUpdate}
@@ -332,14 +328,14 @@ export default function PresentationPage({ judges, onBackToSelection }: Presenta
 
           {/* Error Display */}
           {error && (
-            <div className="mt-6 p-6 bg-red-500/20 border border-red-500/50 rounded-xl text-red-200 backdrop-blur-xl shadow-2xl">
+            <div className="mt-4 p-6 bg-red-500/20 border border-red-500/50 rounded-xl text-red-200 backdrop-blur-xl shadow-2xl">
               <div className="font-bold text-lg mb-2">⚠️ HeyGen Error:</div>
               <div className="text-sm font-mono">{error}</div>
             </div>
           )}
 
           {/* Debug Info */}
-          <div className="mt-6 p-6 bg-black/60 backdrop-blur-xl rounded-xl text-white/70 text-sm border border-cyan-400/20 shadow-lg">
+          <div className="mt-4 p-6 bg-black/60 backdrop-blur-xl rounded-xl text-white/70 text-sm border border-cyan-400/20 shadow-lg">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
               <div>
                 <div className="text-cyan-300 font-bold mb-1">HeyGen Status</div>
