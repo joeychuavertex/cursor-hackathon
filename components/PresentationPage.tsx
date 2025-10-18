@@ -19,6 +19,7 @@ export default function PresentationPage({ judges, onBackToSelection, onPresenta
   const [isRecording, setIsRecording] = useState(false)
   const [timeRemaining, setTimeRemaining] = useState(PRESENTATION_DURATION)
   const [currentPhase, setCurrentPhase] = useState<'presentation' | 'questions' | 'scoring' | 'results'>('presentation')
+  const conversationId = localStorage.getItem('conversationId')
   const [transcriptions, setTranscriptions] = useState<TranscriptionEntry[]>([
     {
       id: 'mock-1',

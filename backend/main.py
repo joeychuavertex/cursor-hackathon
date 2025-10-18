@@ -3,13 +3,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api.judge import router as judges_router
 from api.heygen import router as heygen_router
+from api.transcribe import router as transcribe_router
 
 app = FastAPI(title="Judge API Orchestrator")
 
 # CORS middleware to allow frontend to call the API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001"],  # Next.js dev server
+    allow_origins=["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"],  # Next.js dev server
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -18,6 +19,7 @@ app.add_middleware(
 # Register routers (you can add more later)
 app.include_router(judges_router)
 app.include_router(heygen_router)
+app.include_router(transcribe_router)
 
 @app.get("/")
 async def root():
