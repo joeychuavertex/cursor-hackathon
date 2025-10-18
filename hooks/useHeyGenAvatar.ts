@@ -10,7 +10,7 @@ interface UseHeyGenAvatarReturn {
   stream: MediaStream | null
   isLoading: boolean
   error: string | null
-  startAvatar: (avatarId: string) => Promise<void>
+  startAvatar: (avatarId: string, onAvatarSpeak?: (text: string) => void) => Promise<void>
   stopAvatar: () => Promise<void>
   speak: (text: string) => Promise<void>
   isAvatarActive: boolean
@@ -22,8 +22,10 @@ export function useHeyGenAvatar(): UseHeyGenAvatarReturn {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isAvatarActive, setIsAvatarActive] = useState(false)
+  const currentSpeakingTextRef = useRef<string>('')
+  const onAvatarSpeakRef = useRef<((text: string) => void) | null>(null)
 
-  const startAvatar = useCallback(async (avatarId: string) => {
+  const startAvatar = useCallback(async (avatarId: string, onAvatarSpeak?: (text: string) => void) => {
     if (isAvatarActive) {
       console.warn('Avatar is already active')
       return
@@ -31,6 +33,7 @@ export function useHeyGenAvatar(): UseHeyGenAvatarReturn {
 
     setIsLoading(true)
     setError(null)
+    onAvatarSpeakRef.current = onAvatarSpeak || null
 
     try {
       // Get access token from Python FastAPI backend
@@ -70,6 +73,9 @@ export function useHeyGenAvatar(): UseHeyGenAvatarReturn {
 
       avatarRef.current.on(StreamingEvents.AVATAR_START_TALKING, (event) => {
         console.log('🗣️ Avatar started talking', event)
+        if (onAvatarSpeakRef.current && currentSpeakingTextRef.current) {
+          onAvatarSpeakRef.current(currentSpeakingTextRef.current)
+        }
       })
 
       avatarRef.current.on(StreamingEvents.AVATAR_STOP_TALKING, (event) => {
@@ -131,6 +137,7 @@ export function useHeyGenAvatar(): UseHeyGenAvatarReturn {
     }
 
     try {
+      currentSpeakingTextRef.current = text
       await avatarRef.current.speak({
         text,
         taskType: TaskType.TALK,
