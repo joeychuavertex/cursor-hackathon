@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, ReactNode } from 'react'
 import { useAuth } from '@/hooks/useAuth'
-import { AuthUser, AuthState } from '../lib/types'
+import { AuthUser, AuthState } from '@/types/auth'
 
 interface AuthContextType extends AuthState {
   user: AuthUser | null
