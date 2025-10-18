@@ -28,8 +28,6 @@ def get_supabase_client(user_token: str) -> Client:
         raise RuntimeError("Missing Supabase configuration. Please set SUPABASE_URL and SUPABASE_KEY or NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY")
     
     client = create_client(url, anon_key)
-    # Set the user token for authentication
-    client.auth.set_session(user_token, "")
     return client
 
 def load_personas() -> dict:
@@ -149,78 +147,67 @@ async def get_judges():
 
 # --- Endpoint 1: Get judges list or select a judge ---
 @router.post("/select")
-async def select_judge(request: SelectJudgeRequest = None, authorization: str = Header(None)):
+async def select_judge(request: SelectJudgeRequest, authorization: str = Header(...)):
     """
-    Endpoint to either:
-    1. Get list of available judges (no auth required)
-    2. Select a judge and start conversation (auth required)
+    Endpoint to select a judge and start conversation (auth required)
     """
     
-    # If a specific judge is requested, require authentication and start conversation
-    if not authorization:
-        raise HTTPException(status_code=401, detail="Authentication required to select a judge")
+    if not request or not request.judge:
+        raise HTTPException(status_code=400, detail="Judge selection is required")
+    
+    # Extract and validate authorization token
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid authorization header format")
     
     token = authorization.replace("Bearer ", "")
-    print("TOKEN INCOMING")
-    print(token)
     
-    # For now, bypass Supabase authentication and return a mock response
-    # TODO: Fix Supabase authentication properly
     try:
-        supabase = get_supabase_client(token)   
-        print(supabase) 
-        user_response = supabase.auth.get_user()
-        print(12344)
-        print(user_response)
+        # Initialize Supabase client with user token
+        supabase = get_supabase_client(token)
+        
+        # Verify user authentication using the token directly
+        user_response = supabase.auth.get_user(token)
         
         if not user_response or not user_response.user:
-            # Return mock response for now
-            print("Using mock response due to auth failure")
-            judge = request.judge.lower().strip()
-            allowed_judges = {"altman", "elon", "zuck"}
-            if judge not in allowed_judges:
-                raise HTTPException(status_code=400, detail=f"Invalid judge '{judge}'")
-            
-            # Return a mock conversation ID
-            mock_conversation_id = f"mock_conversation_{judge}_{int(time.time())}"
-            return {"conversation_id": mock_conversation_id, "judge": judge}
+            raise HTTPException(status_code=401, detail="Invalid or expired authentication token")
         
         user_id = user_response.user.id
 
-        # Validate judge
+        # Validate judge selection
         judge = request.judge.lower().strip()
         allowed_judges = {"altman", "elon", "zuck"}
         if judge not in allowed_judges:
-            raise HTTPException(status_code=400, detail=f"Invalid judge '{judge}'")
+            raise HTTPException(status_code=400, detail=f"Invalid judge '{judge}'. Must be one of: {', '.join(allowed_judges)}")
 
-        # Create new conversation
+        # Create new conversation in database
         convo_resp = supabase.table("conversations").insert({
             "user_id": user_id
         }).execute()
+        
+        if not convo_resp.data or len(convo_resp.data) == 0:
+            raise HTTPException(status_code=500, detail="Failed to create conversation")
+            
         conversation_id = convo_resp.data[0]["id"]
 
         # Insert the judge system prompt as the first message
         system_prompt = get_judge_system_prompt(judge)
-        supabase.table("messages").insert({
+        message_resp = supabase.table("messages").insert({
             "conversation_id": conversation_id,
             "sender": "system",
             "content": system_prompt
         }).execute()
+        
+        if not message_resp.data:
+            raise HTTPException(status_code=500, detail="Failed to initialize conversation with judge")
 
         return {"conversation_id": conversation_id, "judge": judge}
     
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
     except Exception as e:
-        print(f"Supabase error: {e}")
-        # Return mock response on any error
-        judge = request.judge.lower().strip()
-        allowed_judges = {"altman", "elon", "zuck"}
-        if judge not in allowed_judges:
-            raise HTTPException(status_code=400, detail=f"Invalid judge '{judge}'")
-        
-        # Return a mock conversation ID
-        import time
-        mock_conversation_id = f"mock_conversation_{judge}_{int(time.time())}"
-        return {"conversation_id": mock_conversation_id, "judge": judge}
+        print(f"Unexpected error in select_judge: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 @router.post("/generate")
 async def generate_text(request: NewMessageRequest, authorization: str = Header(...)):
