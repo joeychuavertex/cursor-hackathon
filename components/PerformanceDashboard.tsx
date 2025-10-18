@@ -16,8 +16,7 @@ import {
   Presentation,
   CheckCircle,
   AlertCircle,
-  ArrowLeft,
-  Download
+  ArrowLeft
 } from 'lucide-react'
 
 interface PerformanceDashboardProps {
@@ -178,11 +177,6 @@ export default function PerformanceDashboard({ judges, onBackToLanding }: Perfor
         <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-500 drop-shadow-2xl">
           🎯 PITCHING PERFORMANCE DASHBOARD
         </h1>
-        
-        <button className="px-6 py-3 bg-yellow-400/20 hover:bg-yellow-400/30 text-yellow-400 rounded-lg transition-all duration-300 border border-yellow-400/50 hover:border-yellow-400/70 hover:shadow-lg hover:shadow-yellow-400/20 flex items-center gap-2">
-          <Download className="w-4 h-4" />
-          Export Report
-        </button>
       </div>
 
       {/* Main Content */}
@@ -192,7 +186,7 @@ export default function PerformanceDashboard({ judges, onBackToLanding }: Perfor
           <div className="bg-black/60 backdrop-blur-xl rounded-2xl p-8 border border-yellow-400/30 shadow-2xl shadow-yellow-400/10 text-center">
             <div className="flex items-center justify-center gap-4 mb-6">
               <Trophy className="w-12 h-12 text-yellow-400" />
-              <h2 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-300">
+              <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-300">
                 Overall Performance Score
               </h2>
             </div>
@@ -365,16 +359,12 @@ export default function PerformanceDashboard({ judges, onBackToLanding }: Perfor
 
         {/* Action Buttons */}
         <div className="max-w-4xl mx-auto text-center">
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex justify-center">
             <button
               onClick={onBackToLanding}
               className="px-8 py-4 bg-gradient-to-r from-yellow-400 to-yellow-500 text-black text-xl font-black rounded-xl hover:from-yellow-300 hover:to-yellow-400 transform hover:scale-105 transition-all duration-300 shadow-2xl shadow-yellow-400/30 border-2 border-yellow-300/50"
             >
               🎯 Start New Pitch
-            </button>
-            
-            <button className="px-8 py-4 bg-gray-800/80 hover:bg-gray-700/80 text-white text-xl font-bold rounded-xl hover:scale-105 transition-all duration-300 border border-gray-600/50 hover:border-yellow-400/50 hover:shadow-lg hover:shadow-yellow-400/20">
-              📊 View Detailed Report
             </button>
           </div>
         </div>

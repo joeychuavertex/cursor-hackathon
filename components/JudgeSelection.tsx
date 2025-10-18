@@ -273,7 +273,7 @@ export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: Ju
             >
               <div className="flex items-center gap-3 bg-black/60 backdrop-blur-xl rounded-lg px-6 py-3 border border-yellow-400/30">
                 <Users className="w-6 h-6 text-yellow-400" />
-                <span className="text-yellow-300 font-semibold">{selectedJudges.length}/5 judges selected</span>
+                <span className="text-yellow-300 font-semibold">{selectedJudges.length}/3 judges selected</span>
               </div>
               <div className="w-px h-8 bg-cyan-400/50"></div>
               <div className="flex items-center gap-3 bg-black/60 backdrop-blur-xl rounded-lg px-6 py-3 border border-cyan-400/30">
