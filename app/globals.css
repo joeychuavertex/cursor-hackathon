@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .shark-tank-room {
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #3b82f6 100%);
+  }
+  
+  .judge-avatar {
+    transition: all 0.3s ease;
+  }
+  
+  .judge-avatar:hover {
+    transform: scale(1.05);
+  }
+  
+  .micro-expression {
+    animation: microExpression 0.3s ease-in-out;
+  }
+  
+  .judge-reaction {
+    animation: judgeReaction 0.5s ease-in-out;
+  }
+}
