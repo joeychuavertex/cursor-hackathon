@@ -19,56 +19,8 @@ export default function PresentationPage({ judges, onBackToSelection, onPresenta
   const [isRecording, setIsRecording] = useState(false)
   const [timeRemaining, setTimeRemaining] = useState(PRESENTATION_DURATION)
   const [currentPhase, setCurrentPhase] = useState<'presentation' | 'questions' | 'scoring' | 'results'>('presentation')
-  const [transcriptions, setTranscriptions] = useState<TranscriptionEntry[]>([
-    {
-      id: 'mock-1',
-      speaker: 'Barbara Corcoran',
-      speakerType: 'avatar',
-      content: 'Welcome to Shark Tank! I\'m excited to hear about your business idea. Please go ahead and present your pitch.',
-      timestamp: new Date(Date.now() - 30000),
-      isFinal: true
-    },
-    {
-      id: 'mock-2',
-      speaker: 'You',
-      speakerType: 'user',
-      content: 'Thank you Barbara! My name is Sarah and I\'m the founder of EcoClean, a revolutionary cleaning product that...',
-      timestamp: new Date(Date.now() - 25000),
-      isFinal: true
-    },
-    {
-      id: 'mock-3',
-      speaker: 'Barbara Corcoran',
-      speakerType: 'avatar',
-      content: 'That sounds interesting! What makes your product different from what\'s already on the market?',
-      timestamp: new Date(Date.now() - 20000),
-      isFinal: true
-    },
-    {
-      id: 'mock-4',
-      speaker: 'You',
-      speakerType: 'user',
-      content: 'Great question! Our unique formula uses 100% natural ingredients and is completely biodegradable, unlike traditional cleaners that...',
-      timestamp: new Date(Date.now() - 15000),
-      isFinal: true
-    },
-    {
-      id: 'mock-5',
-      speaker: 'Barbara Corcoran',
-      speakerType: 'avatar',
-      content: 'I like the environmental angle. What\'s your current revenue and how are you planning to scale?',
-      timestamp: new Date(Date.now() - 10000),
-      isFinal: true
-    },
-    {
-      id: 'mock-6',
-      speaker: 'You',
-      speakerType: 'user',
-      content: 'We\'ve generated $50,000 in sales in our first 6 months, and we\'re looking to expand into major retail chains...',
-      timestamp: new Date(Date.now() - 5000),
-      isFinal: false
-    }
-  ])
+  
+  const conversationId = localStorage.getItem('conversationId')
   
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const videoRef = useRef<HTMLVideoElement | null>(null)

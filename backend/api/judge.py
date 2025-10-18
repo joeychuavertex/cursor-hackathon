@@ -155,8 +155,14 @@ async def select_judge(request: SelectJudgeRequest = None, authorization: str = 
         raise HTTPException(status_code=401, detail="Authentication required to select a judge")
     
     token = authorization.replace("Bearer ", "")
-    supabase = get_supabase_client(token)    
+    print("TOKEN INCOMING")
+    print(token)
+    
+    supabase = get_supabase_client(token)   
+    print(supabase) 
     user_id = supabase.auth.get_user()
+    print(12344)
+    print(user_id)
 
     # Validate judge
     judge = request.judge.lower().strip()
@@ -166,7 +172,7 @@ async def select_judge(request: SelectJudgeRequest = None, authorization: str = 
 
     # Create new conversation
     convo_resp = supabase.table("conversations").insert({
-        "user_id": user_id,
+        "user_id": user_id
     }).execute()
     conversation_id = convo_resp.data[0]["id"]
 
