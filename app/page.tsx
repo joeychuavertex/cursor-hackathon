@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { AuthProvider } from '@/contexts/AuthContext'
 import LandingPage from '@/components/LandingPage'
 import JudgeSelection from '@/components/JudgeSelection'
 import SharkTankRoom from '@/components/SharkTankRoom'
@@ -35,26 +36,28 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen">
-      {currentStep === 'landing' ? (
-        <LandingPage onEnter={handleEnterTank} />
-      ) : currentStep === 'selection' ? (
-        <JudgeSelection 
-          onJudgesSelected={handleJudgeSelection}
-          onBackToLanding={handleBackToLanding}
-        />
-      ) : currentStep === 'room' ? (
-        <SharkTankRoom 
-          judges={selectedJudges} 
-          onBackToSelection={handleBackToSelection}
-          onPresentationComplete={handlePresentationComplete}
-        />
-      ) : (
-        <PerformanceDashboard 
-          judges={selectedJudges}
-          onBackToLanding={handleBackToLanding}
-        />
-      )}
-    </main>
+    <AuthProvider>
+      <main className="min-h-screen">
+        {currentStep === 'landing' ? (
+          <LandingPage onEnter={handleEnterTank} />
+        ) : currentStep === 'selection' ? (
+          <JudgeSelection 
+            onJudgesSelected={handleJudgeSelection}
+            onBackToLanding={handleBackToLanding}
+          />
+        ) : currentStep === 'room' ? (
+          <SharkTankRoom 
+            judges={selectedJudges} 
+            onBackToSelection={handleBackToSelection}
+            onPresentationComplete={handlePresentationComplete}
+          />
+        ) : (
+          <PerformanceDashboard 
+            judges={selectedJudges}
+            onBackToLanding={handleBackToLanding}
+          />
+        )}
+      </main>
+    </AuthProvider>
   )
 }

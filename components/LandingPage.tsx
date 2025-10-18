@@ -5,6 +5,9 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Text, Box, Plane, Sphere, Environment, useTexture } from '@react-three/drei'
 import { motion, AnimatePresence } from 'framer-motion'
 import * as THREE from 'three'
+import { useAuthContext } from '@/contexts/AuthContext'
+import AuthModal from './AuthModal'
+import { User, LogOut } from 'lucide-react'
 
 interface LandingPageProps {
   onEnter: () => void
@@ -101,7 +104,8 @@ function TheatricalDoor({ onClick, isHovered }: { onClick: () => void; isHovered
     // Glow intensity animation
     if (glowRef.current) {
       const intensity = isHovered ? 0.4 : 0.1 + Math.sin(state.clock.elapsedTime * 2) * 0.05
-      glowRef.current.material.emissiveIntensity = intensity
+      const material = glowRef.current.material as THREE.MeshStandardMaterial
+      material.emissiveIntensity = intensity
     }
   })
 
@@ -497,12 +501,31 @@ function LandingScene({ onEnter }: { onEnter: () => void }) {
 // Main Landing Page Component
 export default function LandingPage({ onEnter }: LandingPageProps) {
   const [isLoading, setIsLoading] = useState(true)
+  const [showAuthModal, setShowAuthModal] = useState(false)
+  const { user, signOut, loading: authLoading } = useAuthContext()
 
   useEffect(() => {
     // Simulate loading time for dramatic effect
     const timer = setTimeout(() => setIsLoading(false), 2000)
     return () => clearTimeout(timer)
   }, [])
+
+  const handleEnterTank = () => {
+    if (user) {
+      onEnter()
+    } else {
+      setShowAuthModal(true)
+    }
+  }
+
+  const handleAuthSuccess = () => {
+    setShowAuthModal(false)
+    onEnter()
+  }
+
+  const handleSignOut = async () => {
+    await signOut()
+  }
 
   if (isLoading) {
     return (
@@ -613,12 +636,41 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
           shadows
           className="bg-black"
         >
-          <LandingScene onEnter={onEnter} />
+          <LandingScene onEnter={handleEnterTank} />
         </Canvas>
       </div>
 
       {/* Theatrical Overlay UI */}
       <div className="absolute inset-0 z-10 pointer-events-none">
+        {/* User Authentication UI */}
+        <div className="absolute top-4 right-4 pointer-events-auto">
+          {user ? (
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2 bg-black/60 backdrop-blur-xl border border-yellow-400/30 rounded-lg px-4 py-2">
+                <User size={20} className="text-yellow-400" />
+                <span className="text-yellow-300 text-sm font-medium">
+                  {user.user_metadata?.full_name || user.email?.split('@')[0]}
+                </span>
+              </div>
+              <button
+                onClick={handleSignOut}
+                className="p-2 bg-red-900/60 backdrop-blur-xl border border-red-500/30 rounded-lg hover:bg-red-800/60 transition-colors"
+                title="Sign Out"
+              >
+                <LogOut size={20} className="text-red-300" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowAuthModal(true)}
+              className="flex items-center space-x-2 bg-black/60 backdrop-blur-xl border border-yellow-400/30 rounded-lg px-4 py-2 hover:bg-yellow-400/10 transition-colors"
+            >
+              <User size={20} className="text-yellow-400" />
+              <span className="text-yellow-300 text-sm font-medium">Sign In</span>
+            </button>
+          )}
+        </div>
+
         {/* Top Title - Cinematic Style */}
         <div className="p-8 pointer-events-auto">
           <motion.div
@@ -749,6 +801,13 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
           <div className="text-xs font-mono">THE TANK AWAITS</div>
         </motion.div>
       </div>
+
+      {/* Authentication Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        defaultMode="signin"
+      />
     </div>
   )
 }
