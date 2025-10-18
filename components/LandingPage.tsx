@@ -78,40 +78,91 @@ function TheatricalDoor({ onClick, isHovered }: { onClick: () => void; isHovered
   const groupRef = useRef<THREE.Group>(null)
   const ringRef = useRef<THREE.Mesh>(null)
   const glowRef = useRef<THREE.Mesh>(null)
+  const arrowRef = useRef<THREE.Group>(null)
+  const spotlightRef = useRef<THREE.SpotLight>(null)
   
   useFrame((state) => {
     if (meshRef.current) {
       if (isHovered) {
-        meshRef.current.scale.setScalar(1.05)
-        meshRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 8) * 0.02
+        meshRef.current.scale.setScalar(1.12)
+        meshRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 10) * 0.05
       } else {
         meshRef.current.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1)
         meshRef.current.rotation.y = 0
       }
     }
     
-    // Dramatic floating animation
+    // More dramatic floating animation
     if (groupRef.current) {
-      groupRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.3) * 0.05
+      groupRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.4) * 0.12
+      groupRef.current.rotation.z = Math.sin(state.clock.elapsedTime * 0.2) * 0.02
     }
     
-    // Pulsing ring animation
+    // Pulsing ring animation - much more intense
     if (ringRef.current) {
-      const scale = 1 + Math.sin(state.clock.elapsedTime * 1.5) * 0.05
+      const scale = 1 + Math.sin(state.clock.elapsedTime * 2.5) * 0.25
       ringRef.current.scale.setScalar(scale)
     }
     
-    // Glow intensity animation
+    // Glow intensity animation - much more dramatic
     if (glowRef.current) {
-      const intensity = isHovered ? 0.4 : 0.1 + Math.sin(state.clock.elapsedTime * 2) * 0.05
+      const intensity = isHovered ? 0.8 : 0.3 + Math.sin(state.clock.elapsedTime * 4) * 0.15
       const material = glowRef.current.material as THREE.MeshStandardMaterial
       material.emissiveIntensity = intensity
+    }
+    
+    // Animated arrows pointing to door
+    if (arrowRef.current) {
+      arrowRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 2) * 0.1
+      arrowRef.current.position.y = Math.sin(state.clock.elapsedTime * 1.5) * 0.2
+    }
+    
+    // Spotlight intensity
+    if (spotlightRef.current) {
+      const intensity = isHovered ? 3 : 1.5 + Math.sin(state.clock.elapsedTime * 1.5) * 0.5
+      spotlightRef.current.intensity = intensity
     }
   })
 
   return (
-    <group ref={groupRef} position={[0, 0, -8]}>
-      {/* Ornate Door Frame */}
+    <group ref={groupRef} position={[0, 0, -2]}>
+      {/* Enhanced Spotlight on Door */}
+      <spotLight
+        ref={spotlightRef}
+        position={[0, 10, 2]}
+        angle={0.6}
+        penumbra={0.2}
+        intensity={2.5}
+        color="#fbbf24"
+        castShadow
+        target-position={[0, 0, -2]}
+      />
+      
+      {/* Additional Side Spotlights */}
+      <spotLight
+        position={[-8, 6, 0]}
+        angle={0.3}
+        penumbra={0.4}
+        intensity={1.5}
+        color="#fbbf24"
+        castShadow
+        target-position={[0, 0, -2]}
+      />
+      <spotLight
+        position={[8, 6, 0]}
+        angle={0.3}
+        penumbra={0.4}
+        intensity={1.5}
+        color="#fbbf24"
+        castShadow
+        target-position={[0, 0, -2]}
+      />
+      
+      {/* Rim Lighting for Door */}
+      <pointLight position={[0, 0, 1]} intensity={1.2} color="#00bfff" />
+      <pointLight position={[0, 0, -5]} intensity={0.8} color="#ff6b35" />
+      
+      {/* Ornate Door Frame - Smaller */}
       <Box args={[6, 8, 0.4]} position={[0, 0, 0.2]}>
         <meshStandardMaterial 
           color="#1a1a1a" 
@@ -120,7 +171,7 @@ function TheatricalDoor({ onClick, isHovered }: { onClick: () => void; isHovered
         />
       </Box>
       
-      {/* Main Door */}
+      {/* Main Door - Smaller */}
       <mesh
         ref={meshRef}
         onClick={onClick}
@@ -133,72 +184,88 @@ function TheatricalDoor({ onClick, isHovered }: { onClick: () => void; isHovered
       >
         <boxGeometry args={[5.5, 7.5, 0.3]} />
         <meshStandardMaterial 
-          color={isHovered ? "#2a2a2a" : "#1a1a1a"} 
+          color={isHovered ? "#3a3a3a" : "#1a1a1a"} 
           metalness={0.9} 
           roughness={0.1}
           emissive={isHovered ? "#fbbf24" : "#000000"}
-          emissiveIntensity={isHovered ? 0.1 : 0}
+          emissiveIntensity={isHovered ? 0.2 : 0}
         />
       </mesh>
       
-      {/* Ornate Handle */}
+      {/* Enhanced Ornate Handle - Smaller */}
       <Sphere args={[0.2]} position={[2, 0, 0.4]}>
         <meshStandardMaterial 
           color="#fbbf24" 
           metalness={0.9} 
           roughness={0.1}
           emissive="#fbbf24"
-          emissiveIntensity={0.2}
+          emissiveIntensity={0.4}
         />
       </Sphere>
       
-      {/* "ENTER THE TANK" Text */}
+      {/* "ENTER THE TANK" Text - Printed on Door - Smaller */}
       <Text
-        position={[0, 0, 0.5]}
-        fontSize={0.3}
+        position={[0, 1.5, 0.16]}
+        fontSize={0.4}
         color="#fbbf24"
         anchorX="center"
         anchorY="middle"
-        outlineWidth={0.01}
+        outlineWidth={0.02}
         outlineColor="#000000"
+        fontWeight="bold"
       >
         ENTER THE TANK
       </Text>
       
-      {/* Dramatic Glow Effect */}
-      <Box ref={glowRef} args={[6.5, 8.5, 0.1]} position={[0, 0, 0.1]}>
+      {/* Enhanced Dramatic Glow Effect - Smaller */}
+      <Box ref={glowRef} args={[7, 9, 0.1]} position={[0, 0, 0.1]}>
         <meshStandardMaterial 
           color="#fbbf24" 
           transparent 
-          opacity={0.3}
+          opacity={0.4}
           emissive="#fbbf24"
-          emissiveIntensity={0.1}
+          emissiveIntensity={0.2}
         />
       </Box>
       
-      {/* Pulsing Ring */}
-      <Box ref={ringRef} args={[7, 9, 0.05]} position={[0, 0, 0.05]}>
+      {/* Enhanced Pulsing Ring - Smaller */}
+      <Box ref={ringRef} args={[8, 10, 0.05]} position={[0, 0, 0.05]}>
         <meshStandardMaterial 
           color="#00bfff" 
           transparent 
-          opacity={0.2}
+          opacity={0.3}
           emissive="#00bfff"
-          emissiveIntensity={0.1}
+          emissiveIntensity={0.2}
         />
       </Box>
       
-      {/* Corner Accents */}
+      
+      {/* Enhanced Corner Accents - Smaller */}
       {[
         [-2.5, 3.5], [2.5, 3.5], [-2.5, -3.5], [2.5, -3.5]
       ].map(([x, y], i) => (
-        <Box key={i} args={[0.1, 0.1, 0.1]} position={[x, y, 0.4]}>
+        <Box key={i} args={[0.15, 0.15, 0.15]} position={[x, y, 0.4]}>
           <meshStandardMaterial 
             color="#fbbf24" 
             emissive="#fbbf24"
-            emissiveIntensity={0.3}
+            emissiveIntensity={0.5}
           />
         </Box>
       ))}
+      
+      {/* "CLICK HERE TO START" Text - Printed on Door - Smaller */}
+      <Text
+        position={[0, -1.5, 0.16]}
+        fontSize={0.25}
+        color="#00bfff"
+        anchorX="center"
+        anchorY="middle"
+        outlineWidth={0.02}
+        outlineColor="#000000"
+        fontWeight="bold"
+      >
+        CLICK HERE TO START
+      </Text>
     </group>
   )
 }
@@ -211,16 +278,16 @@ function TheatricalCameraController() {
     // Dramatic, slow camera movement
     const time = state.clock.elapsedTime
     
-    // Slow circular movement around the stage
-    camera.position.x = Math.sin(time * 0.08) * 3
-    camera.position.y = 4 + Math.sin(time * 0.03) * 0.3
-    camera.position.z = 10 + Math.cos(time * 0.08) * 2
+    // Slow circular movement around the stage - adjusted for front door
+    camera.position.x = Math.sin(time * 0.08) * 2
+    camera.position.y = 3 + Math.sin(time * 0.03) * 0.2
+    camera.position.z = 6 + Math.cos(time * 0.08) * 1
     
-    // Look at the center stage with slight variation
+    // Look at the door with slight variation
     camera.lookAt(
-      Math.sin(time * 0.05) * 0.5, 
-      Math.sin(time * 0.02) * 0.2, 
-      Math.sin(time * 0.03) * 0.3
+      Math.sin(time * 0.05) * 0.3, 
+      Math.sin(time * 0.02) * 0.1, 
+      -2 + Math.sin(time * 0.03) * 0.2
     )
   })
   
@@ -293,20 +360,6 @@ function TankEnvironment() {
         />
       </Box>
       
-      {/* Vertical Light Strips */}
-      {Array.from({ length: 8 }, (_, i) => (
-        <Box 
-          key={i} 
-          args={[0.1, 12, 0.1]} 
-          position={[-15 + i * 4, 3, -19.5]}
-        >
-          <meshStandardMaterial 
-            color="#00bfff" 
-            emissive="#00bfff"
-            emissiveIntensity={0.4}
-          />
-        </Box>
-      ))}
       
       {/* Side Walls */}
       <Box args={[0.5, 15, 40]} position={[-20, 5.5, 0]}>
@@ -381,16 +434,6 @@ function SharkChairs() {
           <meshStandardMaterial color="#1a1a1a" metalness={0.7} roughness={0.3} />
         </Box>
         
-        {/* Nameplate */}
-        <Text
-          position={[0, 1.2, 0]}
-          fontSize={0.3}
-          color="#fbbf24"
-          anchorX="center"
-          anchorY="middle"
-        >
-          SHARK {i + 1}
-        </Text>
       </group>
     )
   })
@@ -475,11 +518,11 @@ function LandingScene({ onEnter }: { onEnter: () => void }) {
       <AnimatePresence>
         {showDoor && (
           <>
-            {/* Invisible hover area */}
+            {/* Invisible hover area - Smaller to match door */}
             <mesh
               onPointerOver={handleDoorHover}
               onPointerOut={handleDoorLeave}
-              position={[0, 0, -6]}
+              position={[0, 0, -1]}
             >
               <boxGeometry args={[6, 8, 1]} />
               <meshBasicMaterial transparent opacity={0} />
@@ -597,31 +640,10 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
             transition={{ delay: 1.2, duration: 0.8 }}
             className="text-lg text-yellow-400 font-mono tracking-widest"
           >
-            PREPARING THE TANK...
+            PREPARING THE TANK
           </motion.p>
           
-          <motion.div
-            className="mt-8 flex justify-center space-x-1"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.5 }}
-          >
-            {[0, 1, 2].map((i) => (
-              <motion.div
-                key={i}
-                className="w-2 h-2 bg-yellow-400 rounded-full"
-                animate={{
-                  scale: [1, 1.5, 1],
-                  opacity: [0.5, 1, 0.5],
-                }}
-                transition={{
-                  duration: 1.5,
-                  repeat: Infinity,
-                  delay: i * 0.2,
-                }}
-              />
-            ))}
-          </motion.div>
+      
         </motion.div>
       </div>
     )
@@ -632,7 +654,7 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
       {/* 3D Scene */}
       <div className="absolute inset-0">
         <Canvas
-          camera={{ position: [0, 4, 10], fov: 50 }}
+          camera={{ position: [0, 3, 6], fov: 50 }}
           shadows
           className="bg-black"
         >
@@ -734,7 +756,7 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
                 transition={{ delay: 3.5 }}
               >
                 <div className="text-center">
-                  <div className="text-2xl text-yellow-400 font-bold">5</div>
+                  <div className="text-2xl text-yellow-400 font-bold">3</div>
                   <div className="text-sm text-cyan-300">SHARKS</div>
                 </div>
                 <div className="w-px h-8 bg-yellow-400/50"></div>
@@ -757,22 +779,22 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
               >
                 <motion.div
                   animate={{ 
-                    scale: [1, 1.1, 1],
+                    scale: [1, 1.2, 1],
                     textShadow: [
-                      "0 0 10px rgba(251, 191, 36, 0.5)",
-                      "0 0 20px rgba(251, 191, 36, 0.8)",
-                      "0 0 10px rgba(251, 191, 36, 0.5)"
+                      "0 0 15px rgba(251, 191, 36, 0.8)",
+                      "0 0 30px rgba(251, 191, 36, 1)",
+                      "0 0 15px rgba(251, 191, 36, 0.8)"
                     ]
                   }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  className="text-2xl text-yellow-300 font-bold mb-4"
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                  className="text-3xl text-yellow-300 font-black mb-4 tracking-wider"
                 >
-                  CLICK THE DOOR TO BEGIN
+                  🚪 CLICK THE DOOR TO BEGIN 🚪
                 </motion.div>
                 <motion.div
                   animate={{ opacity: [0.3, 1, 0.3] }}
                   transition={{ duration: 1.5, repeat: Infinity }}
-                  className="text-lg text-cyan-300"
+                  className="text-lg text-yellow-400"
                 >
                   The sharks are waiting...
                 </motion.div>
@@ -791,6 +813,7 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
           <div className="text-sm font-mono tracking-widest">LIVE</div>
           <div className="w-2 h-2 bg-red-500 rounded-full mt-1 animate-pulse"></div>
         </motion.div>
+
 
         <motion.div
           className="absolute bottom-8 right-8 text-cyan-300/40"

@@ -335,7 +335,7 @@ export default function PresentationPage({ judges, onBackToSelection, onPresenta
                 onClick={onPresentationComplete}
                 className="px-8 py-4 bg-gradient-to-r from-yellow-400 to-yellow-500 text-black text-xl font-black rounded-xl hover:from-yellow-300 hover:to-yellow-400 transform hover:scale-105 transition-all duration-300 shadow-2xl shadow-yellow-400/30 border-2 border-yellow-300/50"
               >
-                🎯 Complete Presentation
+                Complete Presentation
               </button>
             </div>
           </div>

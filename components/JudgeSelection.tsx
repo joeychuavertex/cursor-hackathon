@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuthContext } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Judge } from '@/types/judge'
@@ -19,7 +19,7 @@ export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: Ju
   const { judges, loading, error, refetch } = useJudges()
   const [showAuthModal, setShowAuthModal] = useState(false)
 
-  const { user, loading: pageloading, signIn, signUp, resetPassword } = useAuth()
+  const { user, loading: pageloading, signIn, signUp, resetPassword } = useAuthContext()
   const [conversationId, setConversationId] = useState<string | null>(null)
 
   const toggleJudge = (judge: Judge) => {
@@ -243,24 +243,24 @@ export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: Ju
             >
               {user ? (
                 <div className="space-y-2">
-                  <div>✅ Authenticated as: {user.email}</div>
+                  {/* <div>✅ Authenticated as: {user.email}</div>
                   <div className="text-xs text-cyan-300">
                     Token available: {getAccessTokenFromStorage() ? '✅ Yes' : '❌ No'}
                   </div>
                   <div className="text-xs text-cyan-300">
                     localStorage keys: {Object.keys(localStorage).filter(k => k.includes('supabase')).length} supabase keys
-                  </div>
+                  </div> */}
                 </div>
               ) : (
                 <div className="flex items-center gap-4">
-                  <span>❌ Not authenticated - Please sign in first</span>
+                  {/* <span>❌ Not authenticated - Please sign in first</span>
                   <button
                     onClick={() => setShowAuthModal(true)}
                     className="flex items-center gap-2 px-4 py-2 bg-yellow-400 text-black rounded-lg hover:bg-yellow-300 transition-colors"
                   >
                     <LogIn className="w-4 h-4" />
                     Sign In
-                  </button>
+                  </button> */}
                 </div>
               )}
             </motion.div>
@@ -273,7 +273,7 @@ export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: Ju
             >
               <div className="flex items-center gap-3 bg-black/60 backdrop-blur-xl rounded-lg px-6 py-3 border border-yellow-400/30">
                 <Users className="w-6 h-6 text-yellow-400" />
-                <span className="text-yellow-300 font-semibold">{selectedJudges.length}/5 judges selected</span>
+                <span className="text-yellow-300 font-semibold">{selectedJudges.length}/3 judges selected</span>
               </div>
               <div className="w-px h-8 bg-cyan-400/50"></div>
               <div className="flex items-center gap-3 bg-black/60 backdrop-blur-xl rounded-lg px-6 py-3 border border-cyan-400/30">
@@ -417,15 +417,15 @@ export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: Ju
           >
             {selectedJudges.length == 1 ? (
               <>
-                <Zap className="w-6 h-6" />
+                <Zap className="w-5 h-5" />
                 <span>ENTER THE TANK WITH {selectedJudges.length} JUDGE{selectedJudges.length > 1 ? 'S' : ''}!</span>
-                <Zap className="w-6 h-6" />
+                <Zap className="w-5 h-5" />
               </>
             ) : (
               <>
-                <Star className="w-6 h-6" />
-                <span>SELECT AT LEAST 1 JUDGE TO CONTINUE</span>
-                <Star className="w-6 h-6" />
+                <Star className="w-5 h-5" />
+                <span>Start Pitching!</span>
+                <Star className="w-5 h-5" />
               </>
             )}
           </motion.button>
