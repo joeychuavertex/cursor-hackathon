@@ -138,6 +138,17 @@ export default function ThreeJSJudge({
     return colors[judgeId as keyof typeof colors] || '#6b7280'
   }
 
+  const getJudgeRimColor = (judgeId: string) => {
+    const colors = {
+      barbara: '#fbbf24', // Bright Gold
+      mark: '#00bfff',    // Cyan Blue
+      kevin: '#ff6b6b',   // Bright Red
+      lori: '#a855f7',    // Bright Purple
+      robert: '#34d399'   // Bright Green
+    }
+    return colors[judgeId as keyof typeof colors] || '#00bfff'
+  }
+
   const getSkinTone = () => {
     const tones = ['#fbbf24', '#f59e0b', '#d97706', '#92400e']
     return tones[Math.floor(Math.random() * tones.length)]
@@ -249,46 +260,83 @@ export default function ThreeJSJudge({
         />
       </Cylinder>
       
-      {/* Judge Name */}
+      {/* Ambient Rim Lighting */}
+      <Box args={[1.2, 1.8, 0.6]} position={[0, 0, 0]}>
+        <meshStandardMaterial 
+          color={getJudgeRimColor(judge.id)} 
+          transparent 
+          opacity={0.1}
+          emissive={getJudgeRimColor(judge.id)}
+          emissiveIntensity={0.2}
+        />
+      </Box>
+      
+      {/* Glowing Nameplate */}
+      <Box args={[1.5, 0.3, 0.1]} position={[0, -1.3, 0.6]}>
+        <meshStandardMaterial 
+          color="#1a1a1a" 
+          metalness={0.8}
+          roughness={0.2}
+        />
+      </Box>
+      
+      {/* Nameplate Glow Edge */}
+      <Box args={[1.6, 0.4, 0.05]} position={[0, -1.3, 0.65]}>
+        <meshStandardMaterial 
+          color={getJudgeRimColor(judge.id)} 
+          emissive={getJudgeRimColor(judge.id)}
+          emissiveIntensity={0.3}
+          transparent
+          opacity={0.8}
+        />
+      </Box>
+      
+      {/* Judge Name - Glowing Typography */}
       <Text
-        position={[0, -1.5, 0.5]}
-        fontSize={0.15}
-        color="white"
+        position={[0, -1.3, 0.7]}
+        fontSize={0.12}
+        color={getJudgeRimColor(judge.id)}
         anchorX="center"
         anchorY="middle"
         maxWidth={2}
         font="/fonts/helvetiker_regular.typeface.json"
+        outlineWidth={0.01}
+        outlineColor="#000000"
       >
-        {judge.name}
+        {judge.name.toUpperCase()}
       </Text>
       
-      {/* Expertise Tags */}
+      {/* Expertise Tags - Glowing */}
       {judge.expertise.slice(0, 2).map((skill, index) => (
         <Text
           key={index}
-          position={[0, -1.7 - index * 0.12, 0.5]}
+          position={[0, -1.7 - index * 0.12, 0.7]}
           fontSize={0.08}
-          color="#94a3b8"
+          color="#00bfff"
           anchorX="center"
           anchorY="middle"
           font="/fonts/helvetiker_regular.typeface.json"
+          outlineWidth={0.005}
+          outlineColor="#000000"
         >
-          {skill}
+          {skill.toUpperCase()}
         </Text>
       ))}
       
-      {/* Expression Indicator */}
+      {/* Expression Indicator - Glowing */}
       {isReacting && (
         <Text
           position={[0, 1.6, 0]}
           fontSize={0.1}
-          color="#fbbf24"
+          color={getJudgeRimColor(judge.id)}
           anchorX="center"
           anchorY="middle"
+          outlineWidth={0.01}
+          outlineColor="#000000"
         >
           {judge.microExpressions.find(exp => 
             exp.name.toLowerCase().includes(currentExpression)
-          )?.name || 'Reacting...'}
+          )?.name || 'REACTING...'}
         </Text>
       )}
     </group>

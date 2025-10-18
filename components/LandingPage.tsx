@@ -101,7 +101,8 @@ function TheatricalDoor({ onClick, isHovered }: { onClick: () => void; isHovered
     // Glow intensity animation
     if (glowRef.current) {
       const intensity = isHovered ? 0.4 : 0.1 + Math.sin(state.clock.elapsedTime * 2) * 0.05
-      glowRef.current.material.emissiveIntensity = intensity
+      const material = glowRef.current.material as THREE.MeshStandardMaterial
+      material.emissiveIntensity = intensity
     }
   })
 

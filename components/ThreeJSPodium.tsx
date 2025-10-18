@@ -40,27 +40,41 @@ export default function ThreeJSPodium({ isActive, timeRemaining = 30, totalTime 
 
   return (
     <group ref={podiumRef} position={[0, -1.5, 2]}>
-      {/* Main Podium */}
+      {/* Main Podium - Dark Theme */}
       <Cylinder
         args={[1.5, 1.8, 0.3]}
         position={[0, 0, 0]}
       >
         <meshStandardMaterial 
-          color="#1e40af" 
-          metalness={0.6}
-          roughness={0.4}
+          color="#1a1a1a" 
+          metalness={0.8}
+          roughness={0.2}
         />
       </Cylinder>
       
-      {/* Podium Top */}
+      {/* Podium Top - Glowing Edge */}
       <Cylinder
         args={[1.8, 1.8, 0.1]}
         position={[0, 0.2, 0]}
       >
         <meshStandardMaterial 
-          color="#3b82f6" 
-          metalness={0.7}
-          roughness={0.3}
+          color="#0a0a0a" 
+          metalness={0.9}
+          roughness={0.1}
+        />
+      </Cylinder>
+      
+      {/* Glowing Rim */}
+      <Cylinder
+        args={[1.9, 1.9, 0.05]}
+        position={[0, 0.25, 0]}
+      >
+        <meshStandardMaterial 
+          color="#00bfff" 
+          emissive="#00bfff"
+          emissiveIntensity={0.3}
+          transparent
+          opacity={0.8}
         />
       </Cylinder>
       
@@ -88,7 +102,7 @@ export default function ThreeJSPodium({ isActive, timeRemaining = 30, totalTime 
         />
       </Sphere>
       
-      {/* Timer Display */}
+      {/* Timer Display - Glowing */}
       {isActive && (
         <Box
           ref={timerRef}
@@ -96,28 +110,46 @@ export default function ThreeJSPodium({ isActive, timeRemaining = 30, totalTime 
           position={[0, 0.35, 0.9]}
         >
           <meshStandardMaterial 
-            color="#10b981" 
-            metalness={0.5}
-            roughness={0.5}
+            color="#1a1a1a" 
+            metalness={0.8}
+            roughness={0.2}
           />
         </Box>
       )}
       
-      {/* Timer Text */}
+      {/* Timer Glow Edge */}
+      {isActive && (
+        <Box
+          args={[1.3, 0.4, 0.05]}
+          position={[0, 0.35, 0.95]}
+        >
+          <meshStandardMaterial 
+            color="#00bfff" 
+            emissive="#00bfff"
+            emissiveIntensity={0.4}
+            transparent
+            opacity={0.8}
+          />
+        </Box>
+      )}
+      
+      {/* Timer Text - Glowing */}
       {isActive && (
         <Text
-          position={[0, 0.35, 0.95]}
+          position={[0, 0.35, 1.0]}
           fontSize={0.15}
-          color="white"
+          color="#00bfff"
           anchorX="center"
           anchorY="middle"
           font="/fonts/helvetiker_regular.typeface.json"
+          outlineWidth={0.01}
+          outlineColor="#000000"
         >
           {timeRemaining}s
         </Text>
       )}
       
-      {/* Shark Tank Logo on Podium */}
+      {/* Shark Tank Logo on Podium - Glowing */}
       <Text
         position={[0, -0.1, 0.9]}
         fontSize={0.2}
@@ -125,22 +157,26 @@ export default function ThreeJSPodium({ isActive, timeRemaining = 30, totalTime 
         anchorX="center"
         anchorY="middle"
         font="/fonts/helvetiker_regular.typeface.json"
+        outlineWidth={0.01}
+        outlineColor="#000000"
       >
         🦈
       </Text>
       
-      {/* Presentation Instructions */}
+      {/* Presentation Instructions - Glowing */}
       {!isActive && (
         <Text
           position={[0, 0.5, 0.9]}
           fontSize={0.12}
-          color="#94a3b8"
+          color="#00bfff"
           anchorX="center"
           anchorY="middle"
           maxWidth={3}
           font="/fonts/helvetiker_regular.typeface.json"
+          outlineWidth={0.005}
+          outlineColor="#000000"
         >
-          Step up to present your idea
+          STEP UP TO PRESENT YOUR IDEA
         </Text>
       )}
     </group>
