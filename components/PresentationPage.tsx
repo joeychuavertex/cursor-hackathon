@@ -19,6 +19,7 @@ export default function PresentationPage({ judges, onBackToSelection, onPresenta
   const [isRecording, setIsRecording] = useState(false)
   const [currentPhase, setCurrentPhase] = useState<'presentation' | 'questions' | 'scoring' | 'results'>('presentation')
   const judgeConversationMap = localStorage.getItem('judgeConversationMap')
+  const [speaker, setSpeaker] = useState('')
   const [transcriptions, setTranscriptions] = useState<TranscriptionEntry[]>([
     {
       id: 'mock-1',
@@ -182,7 +183,6 @@ export default function PresentationPage({ judges, onBackToSelection, onPresenta
     const conversationId = map.length ? map[Math.floor(Math.random() * map.length)].conversation_id : undefined;
     // corresponds to the judge_id in the judgeConversationMap by using the conversation id
     const judgeId = map.length ? map.find((item: { conversation_id: string, judge_id: string }) => item.conversation_id === conversationId)?.judge_id : undefined;
-
     // Send pitch to judges and get their responses
     if (conversationId) {
       try {
@@ -211,7 +211,9 @@ export default function PresentationPage({ judges, onBackToSelection, onPresenta
           // Otherwise use the ElevenLabs audio
           console.log('🔊 Playing audio from ElevenLabs')
           try {
+            setSpeaker(judgeId)
             await playAudioWithControl(audioBase64)
+            setSpeaker('')
             console.log('✅ Audio playback completed')
           } catch (audioError) {
             console.error('❌ Error playing audio:', audioError)
@@ -312,80 +314,114 @@ export default function PresentationPage({ judges, onBackToSelection, onPresenta
             judges.length === 2 ? 'grid-cols-2' : 
             'grid-cols-3'
           }`}>
-            {judges.map((judge) => (
-              <div key={judge.id} className="relative group">
-                <div className="bg-black/60 backdrop-blur-xl rounded-2xl p-6 border border-yellow-400/30 shadow-2xl shadow-yellow-400/10 hover:shadow-yellow-400/20 transition-all duration-300 hover:scale-105">
-                  {/* Avatar Container */}
-                  <div className="relative mb-4">
-                    {judge.isHeyGenAvatar ? (
-                      <div 
-                        className="bg-black/80 rounded-xl overflow-hidden border-2 border-yellow-400 shadow-lg shadow-yellow-400/20 flex items-center justify-center"
-                        style={{ 
-                          height: `calc(${judges.length === 1 ? '70' : judges.length === 2 ? '50' : '40'}vh - 2rem)`, 
-                          maxHeight: `calc(${judges.length === 1 ? '70' : judges.length === 2 ? '50' : '40'}vh - 2rem)` 
-                        }}
-                      >
-                        {stream ? (
-                          <video
-                            ref={videoRef}
-                            autoPlay
-                            playsInline
-                            muted
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex flex-col items-center justify-center">
-                            <div className="w-12 h-12 border-4 border-yellow-400/30 border-t-yellow-400 rounded-full animate-spin mb-4"></div>
-                            <div className="text-yellow-400 font-bold text-lg">Loading Avatar...</div>
-                            <div className="text-cyan-300 text-sm mt-2 font-semibold">Connecting to HeyGen</div>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div 
-                        className="bg-gradient-to-br from-gray-800 to-black rounded-xl flex items-center justify-center border-2 border-yellow-400/50 shadow-lg shadow-yellow-400/10"
-                        style={{ 
-                          height: `calc(${judges.length === 1 ? '60' : judges.length === 2 ? '45' : '30'}vh - 2rem)`, 
-                          maxHeight: `calc(${judges.length === 1 ? '60' : judges.length === 2 ? '45' : '30'}vh - 2rem)` 
-                        }}
-                      >
-                        <div className="text-center">
-                          <div className={`mb-4 ${judges.length === 1 ? 'text-8xl' : judges.length === 2 ? 'text-6xl' : 'text-5xl'}`}>🦈</div>
-                          <div className="text-yellow-400 font-bold text-lg">3D Avatar</div>
+            {judges.map((judge) => {
+              // Assume 'speaker' is the id of the currently speaking judge passed via props or from state
+              const isSpeaking = judge.id === speaker;
+
+              return (
+                <div key={judge.id} className="relative group">
+                  <div
+                    className={
+                      `bg-black/60 backdrop-blur-xl rounded-2xl p-6 border shadow-2xl shadow-yellow-400/10 hover:shadow-yellow-400/20 transition-all duration-300 hover:scale-105 ` +
+                      (isSpeaking
+                        ? "border-yellow-400 animate-pulse-ring"
+                        : "border-yellow-400/30")
+                    }
+                    // Optionally, if you want even more custom pulsing logic, you could inline style border color with animation here as well.
+                  >
+                    {/* Avatar Container */}
+                    <div className="relative mb-4">
+                      {judge.isHeyGenAvatar ? (
+                        <div 
+                          className="bg-black/80 rounded-xl overflow-hidden border-2 border-yellow-400 shadow-lg shadow-yellow-400/20 flex items-center justify-center"
+                          style={{ 
+                            height: `calc(${judges.length === 1 ? '70' : judges.length === 2 ? '50' : '40'}vh - 2rem)`, 
+                            maxHeight: `calc(${judges.length === 1 ? '70' : judges.length === 2 ? '50' : '40'}vh - 2rem)` 
+                          }}
+                        >
+                          {stream ? (
+                            <video
+                              ref={videoRef}
+                              autoPlay
+                              playsInline
+                              muted
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center">
+                              <div className="w-12 h-12 border-4 border-yellow-400/30 border-t-yellow-400 rounded-full animate-spin mb-4"></div>
+                              <div className="text-yellow-400 font-bold text-lg">Loading Avatar...</div>
+                              <div className="text-cyan-300 text-sm mt-2 font-semibold">Connecting to HeyGen</div>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Judge Info */}
-                  <div className="text-center">
-                    <h3 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-300 mb-3 drop-shadow-lg">
-                      {judge.name}
-                    </h3>
-                    <div className="text-sm text-cyan-300 mb-3 font-semibold tracking-wide">
-                      {judge.expertise.join(' • ')}
+                      ) : (
+                        <div 
+                          className="bg-gradient-to-br from-gray-800 to-black rounded-xl flex items-center justify-center border-2 border-yellow-400/50 shadow-lg shadow-yellow-400/10"
+                          style={{ 
+                            height: `calc(${judges.length === 1 ? '60' : judges.length === 2 ? '45' : '30'}vh - 2rem)`, 
+                            maxHeight: `calc(${judges.length === 1 ? '60' : judges.length === 2 ? '45' : '30'}vh - 2rem)` 
+                          }}
+                        >
+                          <div className="text-center">
+                            <div className={`mb-4 ${judges.length === 1 ? 'text-8xl' : judges.length === 2 ? 'text-6xl' : 'text-5xl'}`}>🦈</div>
+                            <div className="text-yellow-400 font-bold text-lg">3D Avatar</div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     
-                    {/* Connection Status */}
-                    {judge.isHeyGenAvatar && (
-                      <div className="flex items-center justify-center gap-2 text-sm mb-2">
-                        <div className={`w-3 h-3 rounded-full ${stream ? 'bg-green-400 shadow-lg shadow-green-400/50' : 'bg-yellow-400 shadow-lg shadow-yellow-400/50'} animate-pulse`}></div>
-                        <span className={`font-bold ${stream ? 'text-green-400' : 'text-yellow-400'}`}>
-                          {stream ? 'CONNECTED' : 'CONNECTING...'}
-                        </span>
+                    {/* Judge Info */}
+                    <div className="text-center">
+                      <h3 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-300 mb-3 drop-shadow-lg">
+                        {judge.name}
+                      </h3>
+                      <div className="text-sm text-cyan-300 mb-3 font-semibold tracking-wide">
+                        {judge.expertise.join(' • ')}
                       </div>
-                    )}
-                    
-                    {/* HeyGen Avatar ID */}
-                    {judge.heygenAvatarId && (
-                      <div className="text-xs text-white/60 mt-2 font-mono bg-black/40 px-2 py-1 rounded">
-                        ID: {judge.heygenAvatarId}
-                      </div>
-                    )}
+                      
+                      {/* Connection Status */}
+                      {judge.isHeyGenAvatar && (
+                        <div className="flex items-center justify-center gap-2 text-sm mb-2">
+                          <div className={`w-3 h-3 rounded-full ${stream ? 'bg-green-400 shadow-lg shadow-green-400/50' : 'bg-yellow-400 shadow-lg shadow-yellow-400/50'} animate-pulse`}></div>
+                          <span className={`font-bold ${stream ? 'text-green-400' : 'text-yellow-400'}`}>
+                            {stream ? 'CONNECTED' : 'CONNECTING...'}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {/* HeyGen Avatar ID */}
+                      {judge.heygenAvatarId && (
+                        <div className="text-xs text-white/60 mt-2 font-mono bg-black/40 px-2 py-1 rounded">
+                          ID: {judge.heygenAvatarId}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
+            {/* Pulse ring animation for "isSpeaking" border */}
+            <style jsx>{`
+              @keyframes pulseBorder {
+                0% {
+                  box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.5);
+                  border-color: #fbbf24;
+                }
+                40% {
+                  box-shadow: 0 0 0 8px rgba(251, 191, 36, 0.15);
+                  border-color: #fde68a;
+                }
+                100% {
+                  box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.2);
+                  border-color: #fbbf24;
+                }
+              }
+              .animate-pulse-ring {
+                animation: pulseBorder 1.05s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+                border-width: 2.5px !important;
+              }
+            `}</style>
           </div>
         </div>
 
