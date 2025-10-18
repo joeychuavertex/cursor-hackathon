@@ -9,11 +9,12 @@ import { Judge } from '../types/judge'
 interface PresentationPageProps {
   judges: Judge[]
   onBackToSelection: () => void
+  onPresentationComplete: () => void
 }
 
 const PRESENTATION_DURATION = 60 // 60 seconds
 
-export default function PresentationPage({ judges, onBackToSelection }: PresentationPageProps) {
+export default function PresentationPage({ judges, onBackToSelection, onPresentationComplete }: PresentationPageProps) {
   const [presentationText, setPresentationText] = useState('')
   const [isRecording, setIsRecording] = useState(false)
   const [timeRemaining, setTimeRemaining] = useState(PRESENTATION_DURATION)
@@ -323,6 +324,16 @@ export default function PresentationPage({ judges, onBackToSelection }: Presenta
               isRecording={isRecording}
               setIsRecording={setIsRecording}
             />
+            
+            {/* Complete Button */}
+            <div className="mt-6 text-center">
+              <button
+                onClick={onPresentationComplete}
+                className="px-8 py-4 bg-gradient-to-r from-yellow-400 to-yellow-500 text-black text-xl font-black rounded-xl hover:from-yellow-300 hover:to-yellow-400 transform hover:scale-105 transition-all duration-300 shadow-2xl shadow-yellow-400/30 border-2 border-yellow-300/50"
+              >
+                🎯 Complete Presentation
+              </button>
+            </div>
           </div>
         </div>
 
