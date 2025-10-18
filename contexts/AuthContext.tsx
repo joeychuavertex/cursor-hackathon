@@ -2,9 +2,12 @@
 
 import React, { createContext, useContext, ReactNode } from 'react'
 import { useAuth } from '@/hooks/useAuth'
-import { AuthUser, AuthState } from '@/lib/types'
+import { AuthUser, AuthState } from '../lib/types'
 
 interface AuthContextType extends AuthState {
+  user: AuthUser | null
+  loading: boolean
+  error: string | null
   signUp: (email: string, password: string, fullName?: string) => Promise<{ data: any; error: string | null }>
   signIn: (email: string, password: string) => Promise<{ data: any; error: string | null }>
   signOut: () => Promise<void>

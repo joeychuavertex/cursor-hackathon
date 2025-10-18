@@ -8,7 +8,7 @@ export function useSupabase() {
   const saveSession = async (session: Omit<Session, 'id' | 'timestamp'>) => {
     setIsLoading(true)
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('sessions')
         .insert([{
           user_id: session.userId,
@@ -34,7 +34,7 @@ export function useSupabase() {
   const savePresentation = async (presentation: Omit<Presentation, 'id' | 'timestamp'>) => {
     setIsLoading(true)
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('presentations')
         .insert([{
           session_id: presentation.sessionId,
@@ -58,7 +58,7 @@ export function useSupabase() {
   const saveQuestion = async (question: Omit<Question, 'id' | 'timestamp'>) => {
     setIsLoading(true)
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('questions')
         .insert([{
           session_id: question.sessionId,
@@ -83,7 +83,7 @@ export function useSupabase() {
   const getSessionHistory = async (userId: string) => {
     setIsLoading(true)
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('sessions')
         .select('*')
         .eq('user_id', userId)
