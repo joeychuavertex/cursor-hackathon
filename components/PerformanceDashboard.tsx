@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react'
 import { Judge } from '../types/judge'
 import { useGeminiAI } from '../hooks/useGeminiAI'
-import { 
-  Trophy, 
-  Star, 
-  TrendingUp, 
-  Users, 
-  DollarSign, 
+import { supabase } from '../lib/supabase'
+import {
+  Trophy,
+  Star,
+  TrendingUp,
+  Users,
+  DollarSign,
   Lightbulb,
   Target,
   BarChart3,
@@ -63,37 +64,78 @@ export default function PerformanceDashboard({ judges, onBackToLanding }: Perfor
   const generateDashboardData = async () => {
     setIsGenerating(true)
     try {
-      // Generate mock investment memo data
-      const memo: InvestmentMemo = {
-        recommendation: "STRONG BUY - This innovative solution addresses a critical market need with a clear path to profitability.",
-        summary: "EcoClean presents a compelling opportunity in the $50B+ cleaning products market with their revolutionary biodegradable formula. The company has demonstrated strong early traction with $50K in sales in just 6 months.",
-        valueProposition: "100% natural, biodegradable cleaning products that outperform traditional cleaners while being environmentally safe. Unique enzyme-based formula provides superior cleaning power without harmful chemicals.",
-        market: "Targeting the $50B+ global cleaning products market with focus on environmentally conscious consumers. TAM of $12B for eco-friendly segment growing at 15% annually.",
-        product: "Proprietary enzyme-based cleaning formula with 3 core products: all-purpose cleaner, bathroom cleaner, and kitchen degreaser. Patented technology provides superior cleaning with 100% biodegradability.",
-        metrics: "• $50K revenue in first 6 months\n• 40% month-over-month growth\n• 85% customer retention rate\n• $25 average order value\n• 4.8/5 customer satisfaction rating",
-        risks: "• Competition from established brands\n• Regulatory changes in chemical industry\n• Supply chain dependency on natural ingredients\n• Scaling manufacturing capacity\n• Consumer education on benefits",
-        team: "Strong founding team with 15+ years combined experience in consumer products and chemistry. CEO has previous exit in cleaning industry. CTO holds PhD in Chemical Engineering.",
-        deal: "Seeking $2M Series A at $8M pre-money valuation for 25% equity. Funds will be used for manufacturing scale-up, marketing, and team expansion.",
-        scenarioAnalysis: "Conservative: $5M revenue by Year 3\nBase Case: $15M revenue by Year 3\nOptimistic: $30M revenue by Year 3\nAll scenarios show path to profitability by Year 2",
-        conclusion: "EcoClean represents a compelling investment opportunity with strong market potential, innovative technology, and experienced team. The environmental angle provides competitive moat and aligns with growing consumer trends."
+      // Get conversation ID from localStorage
+      const conversationId = localStorage.getItem('conversationId')
+
+      if (!conversationId) {
+        console.error('No conversation ID found')
+        throw new Error('No conversation found. Please complete a pitch session first.')
       }
 
-      // Generate mock presentation metrics
+      // Get auth token from Supabase session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+      if (sessionError || !session?.access_token) {
+        console.error('No auth session found')
+        throw new Error('Authentication required. Please log in.')
+      }
+
+      // Call the performance analysis API
+      const response = await fetch('/api/performance/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          conversationId,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to analyze performance')
+      }
+
+      const data = await response.json()
+
+      setInvestmentMemo(data.investmentMemo)
+      setPresentationMetrics(data.presentationMetrics)
+      setOverallScore(data.overallScore)
+
+    } catch (error) {
+      console.error('Error generating dashboard data:', error)
+
+      // Show user-friendly error message but still display fallback data
+      alert(error instanceof Error ? error.message : 'Failed to load performance data')
+
+      // Fallback to mock data if API fails
+      const memo: InvestmentMemo = {
+        recommendation: "Unable to generate recommendation - No conversation data available",
+        summary: "Please complete a pitch session to see your performance analysis.",
+        valueProposition: "Not available",
+        market: "Not available",
+        product: "Not available",
+        metrics: "No metrics available",
+        risks: "Unable to assess",
+        team: "Not available",
+        deal: "Not specified",
+        scenarioAnalysis: "Not available",
+        conclusion: "Complete a pitch session to receive detailed analysis"
+      }
+
       const metrics: PresentationMetrics = {
-        clarity: 8.5,
-        confidence: 7.8,
-        engagement: 9.2,
-        structure: 8.0,
-        delivery: 8.7,
-        overall: 8.4
+        clarity: 0,
+        confidence: 0,
+        engagement: 0,
+        structure: 0,
+        delivery: 0,
+        overall: 0
       }
 
       setInvestmentMemo(memo)
       setPresentationMetrics(metrics)
-      setOverallScore(8.4)
-      
-    } catch (error) {
-      console.error('Error generating dashboard data:', error)
+      setOverallScore(0)
     } finally {
       setIsGenerating(false)
     }
