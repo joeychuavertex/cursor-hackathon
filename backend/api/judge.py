@@ -1,5 +1,6 @@
 # api/judge_api/judges.py
 from fastapi import APIRouter, HTTPException, Header
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from supabase import create_client, Client
 from typing import List, Literal
@@ -7,7 +8,12 @@ from openai import OpenAI
 import os
 import json
 import time
+from pathlib import Path
 from dotenv import load_dotenv
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from services.elevenlabs_service import text_to_speech_base64
+
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "../../.env.local"))
 
@@ -53,6 +59,19 @@ def format_openai_messages(history):
     for msg in history:
         messages.append({"role": msg["sender"], "content": msg["content"]})
     return messages
+
+def extract_judge_key_from_history(history):
+    """Extract judge key from the system prompt in conversation history."""
+    personas = load_personas()
+    for msg in history:
+        if msg["sender"] == "system":
+            content = msg["content"]
+            # Match against each persona's name
+            for key, persona_data in personas.items():
+                judge_persona = JudgePersona(**persona_data)
+                if f"You are {judge_persona.name}" in content:
+                    return key
+    return None
 
 personas = load_personas()
 
@@ -245,9 +264,11 @@ async def select_judge(request: SelectJudgeRequest, authorization: str = Header(
 async def generate_text(request: NewMessageRequest, authorization: str = Header(...)):
     """
     Endpoint for a judge persona to respond to a pitch, keeping conversational history.
+    Returns both text and audio URL.
     """
+    print(f"🎯 /judges/generate endpoint called with conversation_id: {request.conversation_id}")
     token = authorization.replace("Bearer ", "")
-    supabase = get_supabase_client(token)  
+    supabase = get_supabase_client(token)
     client = get_openai_client()
     
     # Verify user authentication
@@ -262,6 +283,13 @@ async def generate_text(request: NewMessageRequest, authorization: str = Header(
     if not history:
         raise HTTPException(status_code=404, detail="Conversation not found or empty")
 
+    # Extract judge key from conversation history
+    print(f"🔍 Extracting judge key from history (history length: {len(history)})")
+    judge_key = extract_judge_key_from_history(history)
+    print(f"🎭 Judge key extracted: {judge_key}")
+    if not judge_key:
+        raise HTTPException(status_code=400, detail="Could not determine judge from conversation history")
+
     # 🧩 Convert history into OpenAI message format
     messages = format_openai_messages(history)
     messages.append({"role": "user", "content": request.new_message})
@@ -273,27 +301,62 @@ async def generate_text(request: NewMessageRequest, authorization: str = Header(
     }).execute()
 
     try:
+        print(f"🤖 Calling OpenAI with {len(messages)} messages")
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=messages,
             temperature=0.8,
         )
         reply = response.choices[0].message.content.strip()
+        print(f"✅ OpenAI response received (length: {len(reply)})")
+
+        # 🎙️ Convert text to speech using ElevenLabs (no file storage)
+        try:
+            print(f"🎙️ Generating audio for judge: {judge_key}")
+            audio_base64 = text_to_speech_base64(reply, judge_key)
+            print(f"✅ Audio generated successfully")
+        except Exception as audio_error:
+            print(f"⚠️ Warning: Failed to generate audio: {audio_error}")
+            audio_base64 = None
+
         # 💾 Save assistant reply
+        print(f"💾 Saving assistant reply to database")
         supabase.table("messages").insert({
             "conversation_id": request.conversation_id,
             "sender": "assistant",
             "content": reply
         }).execute()
 
+        print(f"🎉 Response generated successfully, returning to client")
         return {
-            "judge_reply": response.choices[0].message.content.strip()
+            "judge_reply": response.choices[0].message.content.strip(),
+            "audio_base64": audio_base64
         }
     except Exception as e:
+        print(f"❌ Error generating judge response: {e}")
         raise HTTPException(status_code=500, detail=f"Error generating judge response: {e}")
 
 
-# --- Endpoint 3: End conversation and delete all messages ---
+# --- Endpoint 3: Serve audio files ---
+@router.get("/audio/{filename}")
+async def get_audio(filename: str):
+    """
+    Serve generated audio files.
+    """
+    audio_dir = Path(__file__).parent.parent / "audio_files"
+    audio_path = audio_dir / filename
+
+    if not audio_path.exists():
+        raise HTTPException(status_code=404, detail="Audio file not found")
+
+    return FileResponse(
+        path=str(audio_path),
+        media_type="audio/mpeg",
+        filename=filename
+    )
+
+
+# --- Endpoint 4: End conversation and delete all messages ---
 @router.post("/end")
 async def end_conversation(request: EndConversationRequest, authorization: str = Header(...)):
     token = authorization.replace("Bearer ", "")

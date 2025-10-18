@@ -61,8 +61,22 @@ export function useElevenLabs() {
   // play audio from base64
   const playAudioFromBase64 = async (base64: string): Promise<void> => {
     return new Promise((resolve, reject) => {
-      const audio = new Audio(base64)
-      audio.play().catch(reject)
+      try {
+        // Convert base64 to data URL if it's not already
+        const audioDataUrl = base64.startsWith('data:') ? base64 : `data:audio/mpeg;base64,${base64}`
+        const audio = new Audio(audioDataUrl)
+        
+        audio.onended = () => resolve()
+        audio.onerror = (error) => {
+          console.error('❌ Audio playback error:', error)
+          reject(new Error('Audio playback failed'))
+        }
+        
+        audio.play().catch(reject)
+      } catch (error) {
+        console.error('❌ Error creating audio from base64:', error)
+        reject(error)
+      }
     })
   }
 
@@ -81,6 +95,7 @@ export function useElevenLabs() {
     synthesizeSpeech,
     transcribeAudio,
     playAudio,
+    playAudioFromBase64,
     isLoading,
     isSttLoading
   }
