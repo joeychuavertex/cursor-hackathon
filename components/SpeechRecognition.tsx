@@ -124,162 +124,151 @@ export default function SpeechRecognition({
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="bg-black/60 backdrop-blur-xl rounded-2xl p-8 border border-yellow-400/30 shadow-2xl shadow-yellow-400/10">
-        <div className="text-center mb-8">
-          <h3 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-500 mb-4 drop-shadow-2xl">
-            🦈 YOUR PITCH
-          </h3>
-        </div>
+    <section className="fixed bottom-0 left-0 right-0 z-50">
+      {/* Main Bottom Bar */}
+      <section className="bg-black/80 backdrop-blur-2xl border-t border-yellow-400/30 shadow-2xl shadow-yellow-400/10">
+        <section className="max-w-7xl mx-auto px-4 py-4">
+          
+          {/* Transcript/Input Display Area - Expandable */}
+          {(transcript || inputMode === 'write') && (
+            <section className="mb-4 bg-black/60 backdrop-blur-xl rounded-3xl border border-yellow-400/20 shadow-lg overflow-hidden">
+              {inputMode === 'write' ? (
+                <textarea
+                  value={transcript}
+                  onChange={(e) => {
+                    setTranscript(e.target.value)
+                    onTextUpdate(e.target.value)
+                  }}
+                  placeholder="Type your pitch here..."
+                  className="w-full px-6 py-4 bg-transparent text-white placeholder-white/40 resize-none outline-none text-base leading-relaxed max-h-48 min-h-[80px]"
+                  rows={3}
+                />
+              ) : (
+                <section className="px-6 py-4 max-h-48 overflow-y-auto">
+                  <p className="text-white/90 text-base leading-relaxed whitespace-pre-wrap">
+                    {transcript || (isRecording ? 'Listening...' : 'Click the mic to start recording')}
+                  </p>
+                </section>
+              )}
+            </section>
+          )}
 
-        {/* Input Mode Toggle */}
-        <div className="flex justify-center mb-8">
-          <div className="bg-black/40 backdrop-blur-lg rounded-xl p-2 border border-yellow-400/20">
-            <div className="flex gap-2">
-              <button
-                onClick={() => setInputMode('write')}
-                className={`px-6 py-3 rounded-lg font-bold transition-all duration-300 flex items-center gap-2 ${
-                  inputMode === 'write'
-                    ? 'bg-yellow-400 text-black shadow-lg shadow-yellow-400/30'
-                    : 'text-white hover:bg-white/10'
-                }`}
-              >
-                <Type className="w-5 h-5" />
-                Write
-              </button>
+          {/* Control Bar */}
+          <section className="flex items-center gap-3">
+            
+            {/* Mode Toggle */}
+            <section className="flex gap-2 bg-black/60 backdrop-blur-xl rounded-full p-1 border border-yellow-400/20">
               <button
                 onClick={() => setInputMode('record')}
-                className={`px-6 py-3 rounded-lg font-bold transition-all duration-300 flex items-center gap-2 ${
+                disabled={isRecording || isSttLoading}
+                className={`p-3 rounded-full transition-all duration-300 ${
                   inputMode === 'record'
                     ? 'bg-yellow-400 text-black shadow-lg shadow-yellow-400/30'
-                    : 'text-white hover:bg-white/10'
-                }`}
+                    : 'text-white/60 hover:text-white hover:bg-white/10'
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                title="Record mode"
               >
                 <Mic className="w-5 h-5" />
-                Record
               </button>
-            </div>
-          </div>
-        </div>
+              <button
+                onClick={() => setInputMode('write')}
+                disabled={isRecording || isSttLoading}
+                className={`p-3 rounded-full transition-all duration-300 ${
+                  inputMode === 'write'
+                    ? 'bg-yellow-400 text-black shadow-lg shadow-yellow-400/30'
+                    : 'text-white/60 hover:text-white hover:bg-white/10'
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                title="Write mode"
+              >
+                <Type className="w-5 h-5" />
+              </button>
+            </section>
 
-        {/* Write Mode */}
-        {inputMode === 'write' && (
-          <div className="space-y-6">
-            <div className="bg-black/40 backdrop-blur-lg rounded-xl p-6 border border-yellow-400/20">
-              <textarea
-                value={transcript}
-                onChange={(e) => {
-                  setTranscript(e.target.value)
-                  onTextUpdate(e.target.value)
-                }}
-                placeholder="Enter your business proposal here"
-                className="w-full h-64 bg-transparent text-white placeholder-white/50 resize-none outline-none text-lg leading-relaxed"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Record Mode */}
-        {inputMode === 'record' && (
-          <div className="space-y-6">
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-2 text-cyan-300 mb-4">
-                <Volume2 className="w-6 h-6" />
-                <span className="text-xl font-bold">Record Your Presentation</span>
-              </div>
-              <p className="text-white/70">
-                {isSupported 
-                  ? "Click the microphone to start recording your pitch"
-                  : "Speech recognition not supported. Please use Chrome or Safari for voice recording."
-                }
-              </p>
-            </div>
-
-            {isSupported ? (
-              <>
-                {/* Recording Controls */}
-                <div className="flex justify-center">
-                  <button
-                    onClick={isRecording ? stopRecording : startRecording}
-                    className={`w-24 h-24 rounded-full flex items-center justify-center text-white transition-all transform hover:scale-105 shadow-2xl ${
-                      isRecording 
-                        ? 'bg-red-500 hover:bg-red-600 animate-pulse shadow-red-500/50' 
-                        : 'bg-yellow-400 hover:bg-yellow-500 shadow-yellow-400/50'
-                    }`}
-                  >
-                    {isRecording ? (
-                      <MicOff className="w-10 h-10" />
-                    ) : (
-                      <Mic className="w-10 h-10" />
-                    )}
-                  </button>
-                </div>
-
-                {/* Status Indicator */}
-                <div className="text-center">
-                  <div className="flex items-center justify-center gap-2 text-white">
-                    <Volume2 className={`w-6 h-6 ${isRecording ? 'animate-pulse' : ''}`} />
-                    <span className="text-lg font-bold">
-                      {isRecording ? 'Recording...' : 'Ready to record'}
-                    </span>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="text-center py-8">
-                <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-6">
-                  <p className="text-red-200 font-bold text-lg mb-2">⚠️ Speech Recognition Not Supported</p>
-                  <p className="text-red-300">
-                    Your browser doesn't support speech recognition. Please use Chrome or Safari for voice recording.
-                  </p>
-                </div>
-              </div>
+            {/* Record/Stop Button (Only in record mode) */}
+            {inputMode === 'record' && isSupported && (
+              <button
+                onClick={isRecording ? stopRecording : startRecording}
+                disabled={isSttLoading}
+                className={`w-14 h-14 rounded-full flex items-center justify-center transition-all transform hover:scale-105 shadow-xl disabled:opacity-50 disabled:cursor-not-allowed ${
+                  isRecording 
+                    ? 'bg-red-500 hover:bg-red-600 animate-pulse shadow-red-500/50 text-white' 
+                    : 'bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-300 hover:to-yellow-400 shadow-yellow-400/50 text-black'
+                }`}
+                title={isRecording ? 'Stop recording' : 'Start recording'}
+              >
+                {isRecording ? (
+                  <MicOff className="w-6 h-6" />
+                ) : (
+                  <Mic className="w-6 h-6" />
+                )}
+              </button>
             )}
 
-            {/* Transcript Display */}
-            <div className="bg-black/40 backdrop-blur-lg rounded-xl p-6 border border-yellow-400/20 min-h-32">
-              <div className="text-white whitespace-pre-wrap text-lg leading-relaxed">
-                {transcript || 'Your speech will appear here...'}
-              </div>
-            </div>
-          </div>
-        )}
+            {/* Status Text */}
+            <section className="flex-1 min-w-0">
+              {inputMode === 'record' && (
+                <section className="flex items-center gap-2">
+                  {isRecording && (
+                    <section className="flex items-center gap-2">
+                      <section className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></section>
+                      <span className="text-white/90 text-sm font-semibold">Recording...</span>
+                    </section>
+                  )}
+                  {!isRecording && !transcript && (
+                    <span className="text-white/50 text-sm">
+                      {isSupported ? 'Ready to record your pitch' : 'Speech recognition not supported'}
+                    </span>
+                  )}
+                </section>
+              )}
+              {inputMode === 'write' && !transcript && (
+                <span className="text-white/50 text-sm">Type your pitch...</span>
+              )}
+            </section>
 
-        {/* Action Buttons */}
-        <div className="flex justify-center gap-4 mt-8">
-          {transcript && (
-            <button
-              onClick={handleSubmitPitch}
-              disabled={isSttLoading}
-              className="px-10 py-4 bg-yellow-400 text-black rounded-xl hover:bg-yellow-500 transition-all font-black text-lg shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSttLoading ? '⏳ PROCESSING...' : '🦈 SUBMIT PITCH'}
-            </button>
+            {/* Action Buttons */}
+            <section className="flex items-center gap-2">
+              {transcript && (
+                <>
+                  <button
+                    onClick={() => {
+                      setTranscript('')
+                      onTextUpdate('')
+                      audioRecordingRef.current = null
+                    }}
+                    disabled={isSttLoading || isRecording}
+                    className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white/70 hover:text-white text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-white/20"
+                  >
+                    Clear
+                  </button>
+                  <button
+                    onClick={handleSubmitPitch}
+                    disabled={isSttLoading || isRecording}
+                    className="px-6 py-2 rounded-full bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-300 hover:to-yellow-400 text-black font-bold text-sm transition-all shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSttLoading ? '⏳ Processing...' : '🦈 Submit'}
+                  </button>
+                </>
+              )}
+            </section>
+          </section>
+
+          {/* Error Display */}
+          {audioError && (
+            <section className="mt-3 bg-red-500/20 border border-red-500/50 rounded-2xl px-4 py-2 flex items-center gap-2">
+              <span className="text-red-200 text-sm font-semibold">⚠️ {audioError}</span>
+            </section>
           )}
           
-          {transcript && (
-            <button
-              onClick={() => {
-                setTranscript('')
-                onTextUpdate('')
-                audioRecordingRef.current = null
-              }}
-              disabled={isSttLoading}
-              className="px-10 py-4 bg-white/20 text-white rounded-xl hover:bg-white/30 transition-all font-bold text-lg border border-white/30 hover:border-white/50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Clear
-            </button>
+          {!isSupported && inputMode === 'record' && (
+            <section className="mt-3 bg-yellow-500/20 border border-yellow-500/50 rounded-2xl px-4 py-2">
+              <p className="text-yellow-200 text-sm font-semibold">
+                ⚠️ Speech recognition not supported. Switch to write mode or use Chrome/Safari.
+              </p>
+            </section>
           )}
-        </div>
-        
-        {/* Error Display */}
-        {audioError && (
-          <div className="mt-4 bg-red-500/20 border border-red-500/50 rounded-xl p-4 text-center">
-            <p className="text-red-200 font-bold">⚠️ Audio Recording Error</p>
-            <p className="text-red-300 text-sm mt-1">{audioError}</p>
-          </div>
-        )}
-      </div>
-    </div>
+        </section>
+      </section>
+    </section>
   )
 }
