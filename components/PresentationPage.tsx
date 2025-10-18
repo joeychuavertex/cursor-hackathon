@@ -19,9 +19,17 @@ export default function PresentationPage({ judges, onBackToSelection, onPresenta
   const [isRecording, setIsRecording] = useState(false)
   const [timeRemaining, setTimeRemaining] = useState(PRESENTATION_DURATION)
   const [currentPhase, setCurrentPhase] = useState<'presentation' | 'questions' | 'scoring' | 'results'>('presentation')
-  const [transcriptions, setTranscriptions] = useState<TranscriptionEntry[]>([])
-  
   const conversationId = localStorage.getItem('conversationId')
+  const [transcriptions, setTranscriptions] = useState<TranscriptionEntry[]>([
+    {
+      id: 'mock-1',
+      speaker: judges[0].name,
+      speakerType: 'avatar',
+      content: 'Welcome to Shark Tank! I\'m excited to hear about your business idea. Please go ahead and present your pitch.',
+      timestamp: new Date(Date.now() - 30000),
+      isFinal: true
+    }
+  ])
   
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const videoRef = useRef<HTMLVideoElement | null>(null)
