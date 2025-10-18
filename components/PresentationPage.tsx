@@ -146,13 +146,7 @@ export default function PresentationPage({ judges, onBackToSelection, onPresenta
     setPresentationText(text)
     updateUserTranscription(text, false) // Mark as interim
   }
-
-  const handleSpeakQuestion = (judgeId: string, text: string) => {
-    if (judgeId === 'barbara') {
-      speak(text)
-    }
-  }
-
+  
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
       {/* Theatrical Background Elements */}

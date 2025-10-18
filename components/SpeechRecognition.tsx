@@ -1,7 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Mic, MicOff, Volume2, Edit3, Type } from 'lucide-react'
+import { useAudioRecorder } from '@/hooks/useAudioRecorder'
+import { useElevenLabs } from '@/hooks/useElevenLabs'
 
 interface SpeechRecognitionProps {
   onTextUpdate: (text: string) => void
@@ -19,7 +21,18 @@ export default function SpeechRecognition({
   const [transcript, setTranscript] = useState('')
   const [isSupported, setIsSupported] = useState(false)
   const [recognition, setRecognition] = useState<any>(null)
-  const [inputMode, setInputMode] = useState<'write' | 'record'>('write')
+  const [inputMode, setInputMode] = useState<'write' | 'record'>('record')
+  
+  // Audio recording hooks
+  const { 
+    startRecording: startAudioRecording, 
+    stopRecording: stopAudioRecording,
+    audioBlob,
+    error: audioError
+  } = useAudioRecorder()
+  
+  const { transcribeAudio, isSttLoading } = useElevenLabs()
+  const audioRecordingRef = useRef<Blob | null>(null)
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'webkitSpeechRecognition' in window) {
@@ -65,18 +78,48 @@ export default function SpeechRecognition({
     }
   }, [transcript, onTextUpdate, onComplete])
 
-  const startRecording = () => {
+  const startRecording = async () => {
     if (recognition && !isRecording) {
       setTranscript('')
       recognition.start()
       setIsRecording(true)
+      
+      // Also start raw audio recording
+      await startAudioRecording()
     }
   }
 
-  const stopRecording = () => {
+  const stopRecording = async () => {
     if (recognition && isRecording) {
       recognition.stop()
       setIsRecording(false)
+      
+      // Stop raw audio recording
+      const audioBlob = await stopAudioRecording()
+      if (audioBlob) {
+        audioRecordingRef.current = audioBlob
+      }
+    }
+  }
+  
+  const handleSubmitPitch = async () => {
+    // If we have an audio recording, send it to STT API
+    if (audioRecordingRef.current && inputMode === 'record') {
+      try {
+        const sttTranscript = await transcribeAudio(audioRecordingRef.current)
+        if (sttTranscript) {
+          // Use STT transcript if available, otherwise use webkit transcript
+          onComplete(sttTranscript)
+          return
+        }
+      } catch (error) {
+        console.error('Error transcribing audio:', error)
+      }
+    }
+    
+    // Fallback to webkit transcript or written text
+    if (transcript.trim()) {
+      onComplete(transcript)
     }
   }
 
@@ -216,10 +259,11 @@ export default function SpeechRecognition({
         <div className="flex justify-center gap-4 mt-8">
           {transcript && (
             <button
-              onClick={() => onComplete(transcript)}
-              className="px-10 py-4 bg-yellow-400 text-black rounded-xl hover:bg-yellow-500 transition-all font-black text-lg shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50 transform hover:scale-105"
+              onClick={handleSubmitPitch}
+              disabled={isSttLoading}
+              className="px-10 py-4 bg-yellow-400 text-black rounded-xl hover:bg-yellow-500 transition-all font-black text-lg shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              🦈 SUBMIT PITCH
+              {isSttLoading ? '⏳ PROCESSING...' : '🦈 SUBMIT PITCH'}
             </button>
           )}
           
@@ -228,13 +272,23 @@ export default function SpeechRecognition({
               onClick={() => {
                 setTranscript('')
                 onTextUpdate('')
+                audioRecordingRef.current = null
               }}
-              className="px-10 py-4 bg-white/20 text-white rounded-xl hover:bg-white/30 transition-all font-bold text-lg border border-white/30 hover:border-white/50"
+              disabled={isSttLoading}
+              className="px-10 py-4 bg-white/20 text-white rounded-xl hover:bg-white/30 transition-all font-bold text-lg border border-white/30 hover:border-white/50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Clear
             </button>
           )}
         </div>
+        
+        {/* Error Display */}
+        {audioError && (
+          <div className="mt-4 bg-red-500/20 border border-red-500/50 rounded-xl p-4 text-center">
+            <p className="text-red-200 font-bold">⚠️ Audio Recording Error</p>
+            <p className="text-red-300 text-sm mt-1">{audioError}</p>
+          </div>
+        )}
       </div>
     </div>
   )
