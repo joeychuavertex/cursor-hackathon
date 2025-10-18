@@ -8,6 +8,8 @@ export const JUDGES: Judge[] = [
     expertise: ['Real Estate', 'Marketing', 'Team Building'],
     avatarUrl: '',
     voiceId: 'barbara_voice',
+    isHeyGenAvatar: true,
+    heygenAvatarId: process.env.NEXT_PUBLIC_HEYGEN_AVATAR_ID || 'Ann_Therapist_public',
     microExpressions: [
       { id: 'smile', name: 'Approving Smile', trigger: 'positive_feedback', duration: 2000, intensity: 0.8 },
       { id: 'frown', name: 'Concerned Frown', trigger: 'financial_concern', duration: 1500, intensity: 0.6 },

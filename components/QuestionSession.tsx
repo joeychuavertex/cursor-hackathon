@@ -11,9 +11,10 @@ interface QuestionSessionProps {
   judges: Judge[]
   presentationText: string
   onComplete: () => void
+  onSpeakQuestion?: (judgeId: string, text: string) => void
 }
 
-export default function QuestionSession({ judges, presentationText, onComplete }: QuestionSessionProps) {
+export default function QuestionSession({ judges, presentationText, onComplete, onSpeakQuestion }: QuestionSessionProps) {
   const [currentJudgeIndex, setCurrentJudgeIndex] = useState(0)
   const [questions, setQuestions] = useState<Question[]>([])
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null)
@@ -56,11 +57,17 @@ export default function QuestionSession({ judges, presentationText, onComplete }
       setCurrentQuestion(newQuestion)
       
       // Generate and play audio
-      const audioUrl = await synthesizeSpeech(questionText, currentJudge.voiceId)
-      if (audioUrl) {
-        setIsPlayingAudio(true)
-        await playAudio(audioUrl)
-        setIsPlayingAudio(false)
+      if (currentJudge.isHeyGenAvatar && onSpeakQuestion) {
+        // Use HeyGen avatar for speaking
+        onSpeakQuestion(currentJudge.id, questionText)
+      } else {
+        // Use ElevenLabs for non-HeyGen judges
+        const audioUrl = await synthesizeSpeech(questionText, currentJudge.voiceId)
+        if (audioUrl) {
+          setIsPlayingAudio(true)
+          await playAudio(audioUrl)
+          setIsPlayingAudio(false)
+        }
       }
     } catch (error) {
       console.error('Error generating question:', error)
@@ -100,9 +107,15 @@ export default function QuestionSession({ judges, presentationText, onComplete }
 
     setIsPlayingAudio(true)
     try {
-      const audioUrl = await synthesizeSpeech(currentQuestion.text, currentJudge.voiceId)
-      if (audioUrl) {
-        await playAudio(audioUrl)
+      if (currentJudge.isHeyGenAvatar && onSpeakQuestion) {
+        // Use HeyGen avatar for speaking
+        onSpeakQuestion(currentJudge.id, currentQuestion.text)
+      } else {
+        // Use ElevenLabs for non-HeyGen judges
+        const audioUrl = await synthesizeSpeech(currentQuestion.text, currentJudge.voiceId)
+        if (audioUrl) {
+          await playAudio(audioUrl)
+        }
       }
     } catch (error) {
       console.error('Error playing audio:', error)
