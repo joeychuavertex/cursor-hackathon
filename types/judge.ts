@@ -7,6 +7,8 @@ export interface Judge {
   voiceId: string
   microExpressions: MicroExpression[]
   scoringCriteria: ScoringCriteria
+  isHeyGenAvatar?: boolean
+  heygenAvatarId?: string
 }
 
 export interface MicroExpression {
