@@ -98,4 +98,5 @@ async def generate_text(request: MessageRequest):
             "judge_reply": response.choices[0].message.content.strip()
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error generating judge response: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    
