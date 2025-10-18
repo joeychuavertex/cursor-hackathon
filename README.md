@@ -4,6 +4,8 @@ An immersive AI-powered Shark Tank experience featuring realistic judge avatars 
 
 ## ✨ Features
 
+- **🎬 Cinematic Landing Page**: Immersive Three.js-powered landing experience with animated intro sequence
+- **🚪 Interactive Door Entry**: Clickable 3D door that routes to the main application
 - **🎭 3D Immersive Environment**: Full Three.js-powered 3D Shark Tank room with realistic lighting and shadows
 - **🤖 3D Judge Avatars**: Detailed 3D models of iconic Shark Tank judges with micro expressions and animations
 - **🎤 Interactive 3D Podium**: Realistic presentation podium with timer and microphone
@@ -83,12 +85,14 @@ npm run dev
 
 ## 🎮 How to Use
 
-1. **Select Judges**: Choose 2-5 judges from the available Shark Tank personalities
-2. **Enter the Tank**: Step into the 3D presentation room
-3. **Present Your Idea**: Use speech recognition or type your 30-second pitch
-4. **Answer Questions**: Respond to intelligent questions from each judge
-5. **Get Scored**: Receive detailed feedback and scores across multiple criteria
-6. **Track Progress**: View your session history and improvement over time
+1. **Landing Experience**: Start with the cinematic Three.js landing page featuring an animated intro
+2. **Enter the Tank**: Click the interactive 3D door to proceed to judge selection
+3. **Select Judges**: Choose 2-5 judges from the available Shark Tank personalities
+4. **Enter the Tank**: Step into the 3D presentation room
+5. **Present Your Idea**: Use speech recognition or type your 30-second pitch
+6. **Answer Questions**: Respond to intelligent questions from each judge
+7. **Get Scored**: Receive detailed feedback and scores across multiple criteria
+8. **Track Progress**: View your session history and improvement over time
 
 ## 🏗️ Project Structure
 
@@ -99,6 +103,7 @@ npm run dev
 │   ├── layout.tsx         # Root layout
 │   └── page.tsx           # Home page
 ├── components/            # React components
+│   ├── LandingPage.tsx    # Cinematic landing page with Three.js
 │   ├── JudgeAvatar.tsx    # 3D judge avatar component
 │   ├── JudgeSelection.tsx # Judge selection interface
 │   ├── PresentationTimer.tsx # Presentation timer

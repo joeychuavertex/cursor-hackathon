@@ -3,13 +3,14 @@
 import { useState } from 'react'
 import { Judge } from '@/types/judge'
 import { JUDGES } from '@/lib/config'
-import { Check, Users, Star, Brain, DollarSign } from 'lucide-react'
+import { Check, Users, Star, Brain, DollarSign, ArrowLeft } from 'lucide-react'
 
 interface JudgeSelectionProps {
   onJudgesSelected: (judges: Judge[]) => void
+  onBackToLanding?: () => void
 }
 
-export default function JudgeSelection({ onJudgesSelected }: JudgeSelectionProps) {
+export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: JudgeSelectionProps) {
   const [selectedJudges, setSelectedJudges] = useState<Judge[]>([])
 
   const toggleJudge = (judge: Judge) => {
@@ -32,6 +33,19 @@ export default function JudgeSelection({ onJudgesSelected }: JudgeSelectionProps
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-6xl mx-auto">
+        {/* Back Button */}
+        {onBackToLanding && (
+          <div className="mb-6">
+            <button
+              onClick={onBackToLanding}
+              className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-lg rounded-lg text-white hover:bg-white/20 transition-all duration-300"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Landing
+            </button>
+          </div>
+        )}
+        
         <div className="text-center mb-12">
           <h1 className="text-6xl font-bold text-white mb-4">
             🦈 Shark Tank Simulator
