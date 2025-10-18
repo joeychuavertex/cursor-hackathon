@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Judge } from '@/types/judge'
 import { JUDGES } from '@/lib/config'
-import { Check, Users, Star, Brain, DollarSign, ArrowLeft } from 'lucide-react'
+import { Check, Users, Star, Brain, DollarSign, ArrowLeft, Crown, Zap } from 'lucide-react'
 
 interface JudgeSelectionProps {
   onJudgesSelected: (judges: Judge[]) => void
@@ -25,73 +26,143 @@ export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: Ju
   }
 
   const handleStart = () => {
-    if (selectedJudges.length >= 2) {
+    if (selectedJudges.length >= 1) {
       onJudgesSelected(selectedJudges)
     }
   }
 
   return (
-    <div className="min-h-screen p-8">
-      <div className="max-w-6xl mx-auto">
-        {/* Back Button */}
-        {onBackToLanding && (
-          <div className="mb-6">
-            <button
-              onClick={onBackToLanding}
-              className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-lg rounded-lg text-white hover:bg-white/20 transition-all duration-300"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Landing
-            </button>
-          </div>
-        )}
-        
-        <div className="text-center mb-12">
-          <h1 className="text-6xl font-bold text-white mb-4">
-            🦈 Shark Tank Simulator
-          </h1>
-          <p className="text-xl text-blue-200 mb-8">
-            Choose your judges and prepare to pitch your idea!
-          </p>
-          <div className="flex items-center justify-center gap-4 text-lg text-blue-100">
-            <div className="flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              <span>{selectedJudges.length}/5 judges selected</span>
-            </div>
-            <div className="text-2xl">•</div>
-            <div className="flex items-center gap-2">
-              <Star className="w-5 h-5 text-yellow-400" />
-              <span>Minimum 2 judges required</span>
-            </div>
-          </div>
-        </div>
+    <div className="min-h-screen relative overflow-hidden bg-black">
+      {/* Theatrical Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-black via-gray-900 to-black"></div>
+      
+      {/* Floating particles */}
+      {Array.from({ length: 15 }, (_, i) => (
+        <motion.div
+          key={i}
+          className="absolute w-1 h-1 bg-yellow-400 rounded-full"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+          }}
+          animate={{
+            y: [0, -20, 0],
+            opacity: [0.3, 1, 0.3],
+          }}
+          transition={{
+            duration: 3 + Math.random() * 2,
+            repeat: Infinity,
+            delay: Math.random() * 2,
+          }}
+        />
+      ))}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {JUDGES.map((judge) => {
+      <div className="relative z-10 p-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Back Button */}
+          {onBackToLanding && (
+            <motion.div 
+              className="mb-8"
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2, duration: 0.8 }}
+            >
+              <button
+                onClick={onBackToLanding}
+                className="flex items-center gap-2 px-6 py-3 bg-black/60 backdrop-blur-xl rounded-lg text-cyan-300 hover:bg-black/80 hover:text-cyan-200 transition-all duration-300 border border-cyan-400/30 hover:border-cyan-400/60"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                Back to Landing
+              </button>
+            </motion.div>
+          )}
+          
+          <motion.div 
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 1 }}
+          >
+            <motion.h1 
+              className="text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-500 mb-6 drop-shadow-2xl"
+              animate={{ 
+                textShadow: [
+                  "0 0 20px rgba(251, 191, 36, 0.5)",
+                  "0 0 40px rgba(251, 191, 36, 0.8)",
+                  "0 0 20px rgba(251, 191, 36, 0.5)"
+                ]
+              }}
+              transition={{ duration: 3, repeat: Infinity }}
+            >
+              🦈 SHARK TANK
+            </motion.h1>
+            <motion.p 
+              className="text-3xl text-cyan-300 drop-shadow-lg font-light tracking-wider mb-8"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1, duration: 1 }}
+            >
+              CHOOSE YOUR JUDGES
+            </motion.p>
+            
+            <motion.div 
+              className="flex items-center justify-center gap-8 text-lg"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.5, duration: 1 }}
+            >
+              <div className="flex items-center gap-3 bg-black/60 backdrop-blur-xl rounded-lg px-6 py-3 border border-yellow-400/30">
+                <Users className="w-6 h-6 text-yellow-400" />
+                <span className="text-yellow-300 font-semibold">{selectedJudges.length}/5 judges selected</span>
+              </div>
+              <div className="w-px h-8 bg-cyan-400/50"></div>
+              <div className="flex items-center gap-3 bg-black/60 backdrop-blur-xl rounded-lg px-6 py-3 border border-cyan-400/30">
+                <Star className="w-6 h-6 text-cyan-400" />
+                <span className="text-cyan-300 font-semibold">Minimum 1 judge required</span>
+              </div>
+            </motion.div>
+          </motion.div>
+
+        <motion.div 
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16"
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.8, duration: 1 }}
+        >
+          {JUDGES.map((judge, index) => {
             const isSelected = selectedJudges.find(j => j.id === judge.id)
             return (
-              <div
+              <motion.div
                 key={judge.id}
+                initial={{ opacity: 0, y: 30, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ delay: 2 + index * 0.1, duration: 0.6 }}
                 onClick={() => toggleJudge(judge)}
                 className={`relative cursor-pointer transform transition-all duration-300 hover:scale-105 ${
-                  isSelected ? 'ring-4 ring-judge-gold' : 'hover:ring-2 hover:ring-blue-300'
+                  isSelected ? 'ring-4 ring-yellow-400 shadow-2xl shadow-yellow-400/50' : 'hover:ring-2 hover:ring-cyan-400 hover:shadow-xl hover:shadow-cyan-400/30'
                 }`}
               >
-                <div className="bg-white rounded-xl p-6 shadow-2xl">
+                <div className="bg-black/60 backdrop-blur-xl rounded-2xl p-6 shadow-2xl border border-white/20 hover:border-yellow-400/50 transition-all duration-300">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-bold text-gray-800">{judge.name}</h3>
+                    <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-300">{judge.name}</h3>
                     {isSelected && (
-                      <Check className="w-6 h-6 text-judge-gold" />
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center"
+                      >
+                        <Check className="w-5 h-5 text-black" />
+                      </motion.div>
                     )}
                   </div>
                   
-                  <div className="mb-4">
-                    <p className="text-gray-600 text-sm mb-2">{judge.personality}</p>
-                    <div className="flex flex-wrap gap-1">
-                      {judge.expertise.map((skill: string, index: number) => (
+                  <div className="mb-6">
+                    <p className="text-cyan-200 text-sm mb-3 font-medium">{judge.personality}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {judge.expertise.map((skill: string, skillIndex: number) => (
                         <span
-                          key={index}
-                          className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
+                          key={skillIndex}
+                          className="px-3 py-1 bg-cyan-400/20 text-cyan-300 text-xs rounded-full border border-cyan-400/30"
                         >
                           {skill}
                         </span>
@@ -99,39 +170,79 @@ export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: Ju
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Brain className="w-4 h-4" />
-                      <span>Focus: {judge.scoringCriteria.financials > 0.3 ? 'Financials' : 
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 text-sm text-cyan-200">
+                      <Brain className="w-4 h-4 text-cyan-400" />
+                      <span className="font-medium">Focus: {judge.scoringCriteria.financials > 0.3 ? 'Financials' : 
                                    judge.scoringCriteria.innovation > 0.3 ? 'Innovation' : 
                                    judge.scoringCriteria.marketPotential > 0.3 ? 'Market' : 'Team'}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <DollarSign className="w-4 h-4" />
-                      <span>Investment Style: {judge.personality.split(',')[0]}</span>
+                    <div className="flex items-center gap-3 text-sm text-cyan-200">
+                      <DollarSign className="w-4 h-4 text-yellow-400" />
+                      <span className="font-medium">Style: {judge.personality.split(',')[0]}</span>
                     </div>
                   </div>
+                  
+                  {/* Selection indicator */}
+                  {isSelected && (
+                    <motion.div
+                      className="absolute top-2 right-2 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                    >
+                      <Crown className="w-3 h-3 text-black" />
+                    </motion.div>
+                  )}
                 </div>
-              </div>
+              </motion.div>
             )
           })}
-        </div>
+        </motion.div>
 
-        <div className="text-center">
-          <button
+        <motion.div 
+          className="text-center"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 2.5, duration: 1 }}
+        >
+          <motion.button
             onClick={handleStart}
-            disabled={selectedJudges.length < 2}
-            className={`px-12 py-4 text-xl font-bold rounded-xl transition-all duration-300 ${
-              selectedJudges.length >= 2
-                ? 'bg-judge-gold text-white hover:bg-yellow-500 transform hover:scale-105 shadow-2xl'
-                : 'bg-gray-400 text-gray-200 cursor-not-allowed'
+            disabled={selectedJudges.length < 1}
+            className={`px-16 py-6 text-2xl font-bold rounded-2xl transition-all duration-300 flex items-center gap-4 mx-auto ${
+              selectedJudges.length >= 1
+                ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400 transform hover:scale-105 shadow-2xl shadow-yellow-400/50 border-2 border-yellow-300'
+                : 'bg-gray-600 text-gray-400 cursor-not-allowed border-2 border-gray-500'
             }`}
+            whileHover={selectedJudges.length >= 1 ? { scale: 1.05 } : {}}
+            whileTap={selectedJudges.length >= 1 ? { scale: 0.95 } : {}}
           >
-            {selectedJudges.length >= 2 
-              ? `Enter the Tank with ${selectedJudges.length} Judges!` 
-              : 'Select at least 2 judges to continue'
-            }
-          </button>
+            {selectedJudges.length >= 1 ? (
+              <>
+                <Zap className="w-6 h-6" />
+                <span>ENTER THE TANK WITH {selectedJudges.length} JUDGE{selectedJudges.length > 1 ? 'S' : ''}!</span>
+                <Zap className="w-6 h-6" />
+              </>
+            ) : (
+              <>
+                <Star className="w-6 h-6" />
+                <span>SELECT AT LEAST 1 JUDGE TO CONTINUE</span>
+                <Star className="w-6 h-6" />
+              </>
+            )}
+          </motion.button>
+          
+          {selectedJudges.length >= 1 && (
+            <motion.p
+              className="mt-6 text-lg text-cyan-300 font-medium"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 3 }}
+            >
+              The sharks are waiting for your pitch...
+            </motion.p>
+          )}
+        </motion.div>
         </div>
       </div>
     </div>
