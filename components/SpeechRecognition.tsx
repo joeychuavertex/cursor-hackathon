@@ -165,16 +165,6 @@ export default function SpeechRecognition({
         {/* Write Mode */}
         {inputMode === 'write' && (
           <div className="space-y-6">
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-2 text-cyan-300 mb-4">
-                <Edit3 className="w-6 h-6" />
-                <span className="text-xl font-bold">Write Your Business Proposal</span>
-              </div>
-              <p className="text-white/70">
-                Type your pitch content below. Be clear, concise, and compelling!
-              </p>
-            </div>
-
             <div className="bg-black/40 backdrop-blur-lg rounded-xl p-6 border border-yellow-400/20">
               <textarea
                 value={transcript}
@@ -182,7 +172,7 @@ export default function SpeechRecognition({
                   setTranscript(e.target.value)
                   onTextUpdate(e.target.value)
                 }}
-                placeholder="Enter your business proposal here...\n\nInclude:\n• Your business idea\n• Target market\n• Revenue model\n• Funding requirements\n• Why the sharks should invest"
+                placeholder="Enter your business proposal here"
                 className="w-full h-64 bg-transparent text-white placeholder-white/50 resize-none outline-none text-lg leading-relaxed"
               />
             </div>

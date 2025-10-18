@@ -286,7 +286,7 @@ export default function PresentationPage({ judges, onBackToSelection, onPresenta
                 onClick={onPresentationComplete}
                 className="px-8 py-4 bg-gradient-to-r from-yellow-400 to-yellow-500 text-black text-xl font-black rounded-xl hover:from-yellow-300 hover:to-yellow-400 transform hover:scale-105 transition-all duration-300 shadow-2xl shadow-yellow-400/30 border-2 border-yellow-300/50"
               >
-                🎯 Complete Presentation
+                Complete Presentation
               </button>
             </div>
           </div>
@@ -300,23 +300,6 @@ export default function PresentationPage({ judges, onBackToSelection, onPresenta
             </div>
           )}
 
-          {/* Debug Info */}
-          <div className="mt-4 p-6 bg-black/60 backdrop-blur-xl rounded-xl text-white/70 text-sm border border-cyan-400/20 shadow-lg">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-              <div>
-                <div className="text-cyan-300 font-bold mb-1">HeyGen Status</div>
-                <div className="text-yellow-400">{isLoading ? 'Loading...' : stream ? 'Connected' : 'Disconnected'}</div>
-              </div>
-              <div>
-                <div className="text-cyan-300 font-bold mb-1">Stream ID</div>
-                <div className="text-yellow-400 font-mono text-xs">{stream?.id || 'None'}</div>
-              </div>
-              <div>
-                <div className="text-cyan-300 font-bold mb-1">Current Phase</div>
-                <div className="text-yellow-400 uppercase font-bold">{currentPhase}</div>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Right Panel - Transcription */}
