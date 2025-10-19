@@ -90,7 +90,7 @@ export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: Ju
       return
     }
 
-    if (selectedJudges.length == 1) {
+    if (selectedJudges.length > 0) {
       try {
         // Try to get session from Supabase first
         const {
@@ -118,39 +118,46 @@ export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: Ju
           return
         }
 
-        const selectedJudge = selectedJudges[0].id
-        console.log('Selected judge:', selectedJudge)
-        
-        const response = await fetch(`${backendUrl}/judges/select`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({ judge : selectedJudge }),
-        })
+        // Loop through all selected judges, call the API for each, and build mapping of judge id to conversation id
+        const judgeConversationMap: { judge_id: string, conversation_id: string }[] = [];
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}))
-          console.error('Failed to select judge:', response.status, errorData)
-          throw new Error(`Failed to select judge: ${errorData.detail || response.statusText}`)
+        for (const judge of selectedJudges) {
+          console.log('Selecting judge:', judge.id);
+
+          const response = await fetch(`${backendUrl}/judges/select`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({ judge: judge.id }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Failed to select judge:', response.status, errorData);
+            throw new Error(`Failed to select judge: ${errorData.detail || response.statusText}`);
+          }
+
+          const data = await response.json();
+          const conversationId = data.conversation_id;
+
+          if (conversationId) {
+            judgeConversationMap.push({ judge_id: judge.id, conversation_id: String(conversationId) });
+            console.log(`Conversation ID for judge ${judge.id} stored: ${conversationId}`);
+          } else {
+            console.error('Conversation ID missing from response:', data);
+            throw new Error('No conversation ID returned from server');
+          }
         }
+        
 
-        const data = await response.json()
-        const conversationId = data.conversation_id
-
-        if (conversationId) {
-          // Store in localStorage (or another storage mechanism)
-          localStorage.setItem('conversationId', conversationId)
-          console.log('Conversation ID stored:', conversationId)
+        // Store the mapping object in localStorage
+        localStorage.setItem('judgeConversationMap', JSON.stringify(judgeConversationMap));
 
           // Continue your logic
           onJudgesSelected(selectedJudges)
-        } else {
-          console.error('Conversation ID missing from response:', data)
-          throw new Error('No conversation ID returned from server')
-        }
-        console.log('Judges successfully sent:', data)
+        console.log('Judges successfully sent:', judgeConversationMap)
 
       } catch (error) {
         console.error('Error selecting judge:', error)
@@ -226,7 +233,7 @@ export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: Ju
               🦈 SHARK TANK
             </motion.h1>
             <motion.p 
-              className="text-3xl text-cyan-300 drop-shadow-lg font-light tracking-wider mb-8"
+              className="text-2xl text-cyan-300 drop-shadow-lg font-light tracking-wider mb-8"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1, duration: 1 }}
@@ -332,52 +339,57 @@ export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: Ju
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ delay: 2 + index * 0.1, duration: 0.6 }}
                   onClick={() => toggleJudge(judge)}
-                  className={`relative cursor-pointer transform transition-all duration-300 hover:scale-105 ${
+                  className={`relative cursor-pointer transform transition-all duration-300 hover:scale-105 flex ${
                     isSelected ? 'ring-4 ring-yellow-400 shadow-2xl shadow-yellow-400/50' : 'hover:ring-2 hover:ring-cyan-400 hover:shadow-xl hover:shadow-cyan-400/30'
                   }`}
+                  style={{ height: '100%' }} // ensures child can be 100% height of grid cell
                 >
-                  <div className="bg-black/60 backdrop-blur-xl rounded-2xl p-6 shadow-2xl border border-white/20 hover:border-yellow-400/50 transition-all duration-300">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-300">{judge.name}</h3>
-                      {isSelected && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          className="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center"
-                        >
-                          <Check className="w-5 h-5 text-black" />
-                        </motion.div>
-                      )}
-                    </div>
-                    
-                    <div className="mb-6">
-                      <p className="text-cyan-200 text-sm mb-3 font-medium">{judge.personality}</p>
-                      <div className="flex flex-wrap gap-2">
-                        {judge.expertise.map((skill: string, skillIndex: number) => (
-                          <span
-                            key={skillIndex}
-                            className="px-3 py-1 bg-cyan-400/20 text-cyan-300 text-xs rounded-full border border-cyan-400/30"
+                  <div className="flex flex-col h-full bg-black/60 backdrop-blur-xl rounded-2xl p-6 shadow-2xl border border-white/20 hover:border-yellow-400/50 transition-all duration-300 relative">
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-300">{judge.name}</h3>
+                        {isSelected && (
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center"
                           >
-                            {skill}
-                          </span>
-                        ))}
+                            <Check className="w-5 h-5 text-black" />
+                          </motion.div>
+                        )}
+                      </div>
+                      
+                      <div className="mb-6">
+                        <p className="text-cyan-200 text-sm mb-3 font-medium">{judge.personality}</p>
+                        <div className="flex flex-wrap gap-2">
+                          {judge.expertise.map((skill: string, skillIndex: number) => (
+                            <span
+                              key={skillIndex}
+                              className="px-3 py-1 bg-cyan-400/20 text-cyan-300 text-xs rounded-full border border-cyan-400/30"
+                            >
+                              {skill}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     </div>
 
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3 text-sm text-cyan-200">
-                        <Brain className="w-4 h-4 text-cyan-400" />
-                      </div>
-                      <div className="flex items-center gap-3 text-sm text-cyan-200">
-                        <DollarSign className="w-4 h-4 text-yellow-400" />
-                        <span className="font-medium">Style: {judge.investmentStyle || judge.personality.split(',')[0]}</span>
-                      </div>
-                      {judge.causes && judge.causes.length > 0 && (
+                    <div className="flex-1 flex flex-col justify-end">
+                      <div className="space-y-3">
                         <div className="flex items-center gap-3 text-sm text-cyan-200">
-                          <Star className="w-4 h-4 text-purple-400" />
-                          <span className="font-medium">Causes: {judge.causes.slice(0, 2).join(', ')}</span>
+                          <Brain className="w-4 h-4 text-cyan-400" />
                         </div>
-                      )}
+                        <div className="flex items-center gap-3 text-sm text-cyan-200">
+                          <DollarSign className="w-4 h-4 text-yellow-400" />
+                          <span className="font-medium">Style: {judge.investmentStyle || judge.personality.split(',')[0]}</span>
+                        </div>
+                        {judge.causes && judge.causes.length > 0 && (
+                          <div className="flex items-center gap-3 text-sm text-cyan-200">
+                            <Star className="w-4 h-4 text-purple-400" />
+                            <span className="font-medium">Causes: {judge.causes.slice(0, 2).join(', ')}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     
                     {/* Selection indicator */}
@@ -407,15 +419,16 @@ export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: Ju
           <motion.button
             onClick={handleStart}
             disabled={selectedJudges.length < 1}
-            className={`px-16 py-6 text-2xl font-bold rounded-2xl transition-all duration-300 flex items-center gap-4 mx-auto ${
-              selectedJudges.length == 1
+            className={`px-16 py-2 text-2xl font-bold rounded-2xl transition-all duration-300 flex items-center gap-2 mx-auto ${
+              selectedJudges.length > 0 
                 ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400 transform hover:scale-105 shadow-2xl shadow-yellow-400/50 border-2 border-yellow-300'
                 : 'bg-gray-600 text-gray-400 cursor-not-allowed border-2 border-gray-500'
             }`}
+            style={{ marginTop: -38 }}
             whileHover={selectedJudges.length == 1 ? { scale: 1.05 } : {}}
             whileTap={selectedJudges.length == 1 ? { scale: 0.95 } : {}}
           >
-            {selectedJudges.length == 1 ? (
+            {selectedJudges.length > 0 ? (
               <>
                 <Zap className="w-5 h-5" />
                 <span>ENTER THE TANK WITH {selectedJudges.length} JUDGE{selectedJudges.length > 1 ? 'S' : ''}!</span>
@@ -432,7 +445,7 @@ export default function JudgeSelection({ onJudgesSelected, onBackToLanding }: Ju
           
           {selectedJudges.length == 1 && (
             <motion.p
-              className="mt-6 text-lg text-cyan-300 font-medium"
+              className="mt-2 text-lg text-cyan-300 font-medium"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 3 }}

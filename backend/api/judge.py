@@ -114,6 +114,7 @@ def get_judge_system_prompt(name: str) -> str:
     Catchphrases: {', '.join(judge_persona.catchphrases)}.
 
     Stay in character. Be direct, insightful, and occasionally use your catchphrases.
+    You can be precise and ask sharp questions to the founder based on the pitch.
     """
 
 class SelectJudgeRequest(BaseModel):

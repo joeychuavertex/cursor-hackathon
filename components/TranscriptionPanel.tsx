@@ -21,10 +21,10 @@ export default function TranscriptionPanel({ transcriptions, className = '' }: T
   const scrollRef = useRef<HTMLDivElement>(null)
   const [isAutoScroll, setIsAutoScroll] = useState(true)
 
-  // Auto-scroll to bottom when new transcriptions arrive
+  // Auto-scroll to top when new transcriptions arrive (since we're showing latest first)
   useEffect(() => {
     if (isAutoScroll && scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+      scrollRef.current.scrollTop = 0
     }
   }, [transcriptions, isAutoScroll])
 
@@ -39,14 +39,17 @@ export default function TranscriptionPanel({ transcriptions, className = '' }: T
 
   const handleScroll = () => {
     if (scrollRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } = scrollRef.current
-      const isAtBottom = scrollTop + clientHeight >= scrollHeight - 10
-      setIsAutoScroll(isAtBottom)
+      const { scrollTop } = scrollRef.current
+      const isAtTop = scrollTop <= 10
+      setIsAutoScroll(isAtTop)
     }
   }
 
+  // Reverse transcriptions to show latest first
+  const reversedTranscriptions = [...transcriptions].reverse()
+
   return (
-    <div className={`bg-black/80 backdrop-blur-xl rounded-2xl border border-yellow-400/30 shadow-2xl shadow-yellow-400/10 flex flex-col h-full ${className}`}>
+    <section className={`bg-black/80 backdrop-blur-xl rounded-2xl border border-yellow-400/30 shadow-2xl shadow-yellow-400/10 flex flex-col ${className}`} style={className?.includes('h-') ? undefined : { height: 'calc(75vh - 2rem)', maxHeight: 'calc(75vh - 2rem)' }}>
       {/* Header */}
       <div className="p-6 border-b border-yellow-400/20">
         <h3 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-300 mb-2">
@@ -72,7 +75,7 @@ export default function TranscriptionPanel({ transcriptions, className = '' }: T
             <p className="text-white/40 text-sm">Speech will appear here in real-time</p>
           </div>
         ) : (
-          transcriptions.map((entry) => (
+          reversedTranscriptions.map((entry) => (
             <div
               key={entry.id}
               className={`group relative p-4 rounded-xl transition-all duration-300 ${
@@ -156,6 +159,6 @@ export default function TranscriptionPanel({ transcriptions, className = '' }: T
           )}
         </div>
       </div>
-    </div>
+    </section>
   )
 }

@@ -64,7 +64,10 @@ export default function PerformanceDashboard({ judges, onBackToLanding }: Perfor
     setIsGenerating(true)
     try {
       // Get conversation ID from localStorage
-      const conversationId = localStorage.getItem('conversationId')
+      const mapping = localStorage.getItem('judgeConversationMap')
+
+      const conversationMap = JSON.parse(mapping || '[]')
+      const conversationId = conversationMap.length > 0 ? conversationMap[0].conversation_id : null
 
       if (!conversationId) {
         console.error('No conversation ID found')
