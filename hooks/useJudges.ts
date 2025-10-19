@@ -8,8 +8,6 @@ interface UseJudgesReturn {
   refetch: () => void
 }
 
-const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000'
-
 export function useJudges(): UseJudgesReturn {
   const [judges, setJudges] = useState<Judge[]>([])
   const [loading, setLoading] = useState(true)
@@ -20,7 +18,8 @@ export function useJudges(): UseJudgesReturn {
       setLoading(true)
       setError(null)
       
-      const response = await fetch(`${backendUrl}/judges/get_judges`)
+      // Use Next.js API route instead of direct backend call
+      const response = await fetch('/api/judges/list')
 
       if (!response.ok) {
         throw new Error(`Failed to fetch judges: ${response.status}`)
