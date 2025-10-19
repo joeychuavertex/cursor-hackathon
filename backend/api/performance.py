@@ -2,7 +2,7 @@
 from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 from supabase import create_client, Client
-from openai import OpenAI
+from google import genai
 import os
 import json
 from typing import List, Dict
@@ -12,12 +12,12 @@ load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "../../.env.loca
 
 router = APIRouter(prefix="/performance", tags=["Performance"])
 
-# Initialize OpenAI client
-def get_openai_client() -> OpenAI:
-    api_key = os.getenv("OPENAI_API_KEY")
+# Initialize Gemini client
+def get_gemini_client() -> genai.Client:
+    api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
-        raise RuntimeError("Missing OPENAI_API_KEY in environment.")
-    return OpenAI(api_key=api_key)
+        raise RuntimeError("Missing GEMINI_API_KEY in environment.")
+    return genai.Client(api_key=api_key)
 
 def get_supabase_client(user_token: str) -> Client:
     url = os.getenv("SUPABASE_URL") or os.getenv("NEXT_PUBLIC_SUPABASE_URL")
@@ -104,7 +104,7 @@ async def analyze_performance(request: AnalyzePerformanceRequest, authorization:
     try:
         # Initialize clients
         supabase = get_supabase_client(token)
-        openai_client = get_openai_client()
+        gemini_client = get_gemini_client()
 
         # Verify user authentication
         user_response = supabase.auth.get_user(token)
@@ -184,32 +184,34 @@ Return ONLY valid JSON, no markdown formatting.
 
         print(f"🤖 Generating investment memo...")
         # Generate investment memo
-        memo_response = openai_client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You are a venture capital analyst. Respond only with valid JSON, no markdown."},
-                {"role": "user", "content": investment_memo_prompt}
-            ],
-            temperature=0.7,
-            response_format={"type": "json_object"}
+        memo_full_prompt = f"You are a venture capital analyst. Respond only with valid JSON, no markdown.\n\n{investment_memo_prompt}"
+
+        memo_response = gemini_client.models.generate_content(
+            model="gemini-2.0-flash-exp",
+            contents=memo_full_prompt,
+            config={
+                "temperature": 0.7,
+                "response_mime_type": "application/json"
+            }
         )
 
-        memo_text = memo_response.choices[0].message.content.strip()
+        memo_text = memo_response.text.strip()
         print(f"✅ Investment memo generated")
 
         print(f"🤖 Generating presentation metrics...")
         # Generate presentation metrics
-        metrics_response = openai_client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You are a pitch coach. Respond only with valid JSON, no markdown."},
-                {"role": "user", "content": presentation_metrics_prompt}
-            ],
-            temperature=0.7,
-            response_format={"type": "json_object"}
+        metrics_full_prompt = f"You are a pitch coach. Respond only with valid JSON, no markdown.\n\n{presentation_metrics_prompt}"
+
+        metrics_response = gemini_client.models.generate_content(
+            model="gemini-2.0-flash-exp",
+            contents=metrics_full_prompt,
+            config={
+                "temperature": 0.7,
+                "response_mime_type": "application/json"
+            }
         )
 
-        metrics_text = metrics_response.choices[0].message.content.strip()
+        metrics_text = metrics_response.text.strip()
         print(f"✅ Presentation metrics generated")
 
         # Parse responses

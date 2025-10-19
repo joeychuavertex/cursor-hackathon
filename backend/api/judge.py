@@ -4,7 +4,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from supabase import create_client, Client
 from typing import List, Literal
-from openai import OpenAI
+from google import genai
 import os
 import json
 import time
@@ -20,11 +20,11 @@ load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "../../.env.loca
 router = APIRouter(prefix="/judges", tags=["Judges"])
 
 # Initialize client lazily
-def get_openai_client() -> OpenAI:
-    api_key = os.getenv("OPENAI_API_KEY")
+def get_gemini_client() -> genai.Client:
+    api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
-        raise RuntimeError("Missing OPENAI_API_KEY in environment.")
-    return OpenAI(api_key=api_key)
+        raise RuntimeError("Missing GEMINI_API_KEY in environment.")
+    return genai.Client(api_key=api_key)
 
 def get_supabase_client(user_token: str) -> Client:
     url = os.getenv("SUPABASE_URL") or os.getenv("NEXT_PUBLIC_SUPABASE_URL")
@@ -270,7 +270,7 @@ async def generate_text(request: NewMessageRequest, authorization: str = Header(
     print(f"🎯 /judges/generate endpoint called with conversation_id: {request.conversation_id}")
     token = authorization.replace("Bearer ", "")
     supabase = get_supabase_client(token)
-    client = get_openai_client()
+    client = get_gemini_client()
     
     # Verify user authentication
     user_response = supabase.auth.get_user(token)
@@ -302,14 +302,31 @@ async def generate_text(request: NewMessageRequest, authorization: str = Header(
     }).execute()
 
     try:
-        print(f"🤖 Calling OpenAI with {len(messages)} messages")
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=messages,
-            temperature=0.8,
+        print(f"🤖 Calling Gemini with {len(messages)} messages")
+
+        # Convert messages to Gemini format
+        prompt_parts = []
+        for msg in messages:
+            role = msg["role"]
+            content = msg["content"]
+            if role == "system":
+                prompt_parts.append(f"System: {content}")
+            elif role == "user":
+                prompt_parts.append(f"User: {content}")
+            elif role == "assistant":
+                prompt_parts.append(f"Assistant: {content}")
+
+        full_prompt = "\n\n".join(prompt_parts)
+
+        response = client.models.generate_content(
+            model="gemini-2.0-flash-exp",
+            contents=full_prompt,
+            config={
+                "temperature": 0.8,
+            }
         )
-        reply = response.choices[0].message.content.strip()
-        print(f"✅ OpenAI response received (length: {len(reply)})")
+        reply = response.text.strip()
+        print(f"✅ Gemini response received (length: {len(reply)})")
 
         # 🎙️ Convert text to speech using ElevenLabs (no file storage)
         try:
@@ -330,7 +347,7 @@ async def generate_text(request: NewMessageRequest, authorization: str = Header(
 
         print(f"🎉 Response generated successfully, returning to client")
         return {
-            "judge_reply": response.choices[0].message.content.strip(),
+            "judge_reply": reply,
             "audio_base64": audio_base64
         }
     except Exception as e:
@@ -385,8 +402,8 @@ async def end_conversation(request: EndConversationRequest, authorization: str =
 @router.post("/get_score")
 async def end_conversation(request: GetScoreRequest, authorization: str = Header(...)):
     token = authorization.replace("Bearer ", "")
-    supabase = get_supabase_client(token)  
-    client = get_openai_client()
+    supabase = get_supabase_client(token)
+    client = get_gemini_client()
 
     # 🧠 Load existing conversation history
     history_resp = get_chat_history(supabase, request.conversation_id)
@@ -398,22 +415,42 @@ async def end_conversation(request: GetScoreRequest, authorization: str = Header
 
     instructions: str = "Now given all of the above chat history, i want you to give a comprehensive overview of how well this pitch preformed using the given structure"
 
-    # 🧩 Convert history into OpenAI message format
+    # 🧩 Convert history into Gemini message format
     messages = format_openai_messages(history)
     messages.append({"role": "user", "content": instructions})
 
+    prompt_parts = []
+    for msg in messages:
+        role = msg["role"]
+        content = msg["content"]
+        if role == "system":
+            prompt_parts.append(f"System: {content}")
+        elif role == "user":
+            prompt_parts.append(f"User: {content}")
+        elif role == "assistant":
+            prompt_parts.append(f"Assistant: {content}")
+
+    full_prompt = "\n\n".join(prompt_parts)
+    full_prompt += "\n\nProvide your response in JSON format matching the InvestmentMemoOutput schema with 'memo' and 'metrics' fields."
+
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=messages,
-            temperature=0.8,
-            response_format=InvestmentMemoOutput,
+        response = client.models.generate_content(
+            model="gemini-2.0-flash-exp",
+            contents=full_prompt,
+            config={
+                "temperature": 0.8,
+                "response_mime_type": "application/json"
+            }
         )
-        reply = response.choices[0].message.content.strip()
+        reply_text = response.text.strip()
+
+        # Parse JSON response
+        import json
+        reply_data = json.loads(reply_text)
 
         return {
-            "memo": reply.memo,
-            "metrics": reply.metrics
+            "memo": reply_data.get("memo", {}),
+            "metrics": reply_data.get("metrics", {})
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating judge response: {e}")
