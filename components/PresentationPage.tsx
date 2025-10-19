@@ -365,8 +365,13 @@ export default function PresentationPage({ judges, onBackToSelection, onPresenta
                           }}
                         >
                           <div className="text-center">
-                            <div className={`mb-4 ${judges.length === 1 ? 'text-8xl' : judges.length === 2 ? 'text-6xl' : 'text-5xl'}`}>🦈</div>
-                            <div className="text-yellow-400 font-bold text-lg">3D Avatar</div>
+                            <div className={`mb-4 ${judges.length === 1 ? 'w-64 h-64' : judges.length === 2 ? 'w-24 h-24' : 'w-20 h-20'} mx-auto`}>
+                              <img 
+                                src="/audio/sam-altman.jpeg" 
+                                alt="Sam Altman" 
+                                className="w-full h-full object-cover rounded-full border-4 border-yellow-400/50 shadow-lg"
+                              />
+                            </div>
                           </div>
                         </div>
                       )}
